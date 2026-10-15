@@ -5,9 +5,9 @@ Endpoints implemented in Slice 1:
     GET  /health   — liveness check; 503 if Ollama is not running
     POST /rewrite  — stream the rewritten text as Server-Sent Events (SSE)
 
-Endpoints stubbed for later slices:
-    POST /clarify  (Slice 2)
-    GET  /tones    (Slice 2)
+Endpoints implemented in Slice 2:
+    POST /clarify  — decide whether clarification questions are needed
+    GET  /tones    — return the available tones from tones.json
 
 Run locally:
     uvicorn apps.api.main:app --reload --port 8000
@@ -23,7 +23,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from apps.api import llm
-from apps.api.schemas import HealthResponse, RewriteRequest
+from apps.api.schemas import (
+    ClarifyRequest,
+    ClarifyResponse,
+    HealthResponse,
+    RewriteRequest,
+)
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -173,14 +178,102 @@ async def rewrite(req: RewriteRequest) -> StreamingResponse:
 
 
 # ---------------------------------------------------------------------------
-# Stubs for Slice 2 (not implemented yet)
+# Clarify JSON schema — passed to Ollama's `format` field so the model is
+# constrained to produce valid structured output without post-hoc parsing.
 # ---------------------------------------------------------------------------
 
-@app.post("/clarify", tags=["clarify"], include_in_schema=False)
-async def clarify_stub() -> dict:
-    raise HTTPException(status_code=501, detail="Not implemented — coming in Slice 2")
+_CLARIFY_JSON_SCHEMA: dict = {
+    "type": "object",
+    "properties": {
+        "needs_clarification": {"type": "boolean"},
+        "questions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id":      {"type": "string"},
+                    "q":       {"type": "string"},
+                    "options": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 2,
+                        "maxItems": 5,
+                    },
+                },
+                "required": ["id", "q", "options"],
+            },
+            "maxItems": 3,
+        },
+    },
+    "required": ["needs_clarification", "questions"],
+}
 
 
-@app.get("/tones", tags=["tones"], include_in_schema=False)
-async def tones_stub() -> dict:
-    raise HTTPException(status_code=501, detail="Not implemented — coming in Slice 2")
+# ---------------------------------------------------------------------------
+# POST /clarify
+# ---------------------------------------------------------------------------
+
+@app.post("/clarify", response_model=ClarifyResponse, tags=["clarify"])
+async def clarify(req: ClarifyRequest) -> ClarifyResponse:
+    """
+    Decide whether the draft needs clarification before rewriting.
+
+    Calls the model with schema-enforced JSON (Ollama `format` field).
+    On any LLM or JSON failure: returns needs_clarification=false so the
+    extension can proceed straight to rewriting rather than surfacing an error.
+    """
+    system_prompt = _load_text("clarify.md")
+
+    # Include the app context hint when available so the model can infer
+    # domain-specific questions (e.g. "Gmail" → likely an email).
+    user_content = req.text
+    if req.context.app:
+        user_content = f"[Context: writing in {req.context.app}]\n\n{req.text}"
+
+    # Append /no_think as belt-and-suspenders (same as rewrite)
+    user_content = user_content + " /no_think"
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user",   "content": user_content},
+    ]
+
+    try:
+        raw = await llm.generate_json(
+            messages,
+            schema=_CLARIFY_JSON_SCHEMA,
+            temperature=0.2,
+        )
+        # Validate through Pydantic — catches structurally-valid JSON that
+        # still violates business rules (e.g. 0 options, > 3 questions).
+        response = ClarifyResponse(**raw)
+
+        # Clamp: never return more than 3 questions even if the model ignores maxItems
+        response.questions = response.questions[:3]
+        # Clamp each question's options to 2-5
+        for q in response.questions:
+            q.options = q.options[:5]
+            if len(q.options) < 2:
+                # Degenerate question — drop it
+                response.questions.remove(q)
+
+        # If no questions remain after clamping, mark as clear
+        if not response.questions:
+            response.needs_clarification = False
+
+        return response
+
+    except Exception:
+        # Any failure (network, JSON, Pydantic) → safe fallback:
+        # skip clarification rather than blocking the user.
+        return ClarifyResponse(needs_clarification=False, questions=[])
+
+
+# ---------------------------------------------------------------------------
+# GET /tones
+# ---------------------------------------------------------------------------
+
+@app.get("/tones", tags=["tones"])
+async def tones() -> dict:
+    """Return all available tones from tones.json. Extensible without code changes."""
+    return _load_json("tones.json")
