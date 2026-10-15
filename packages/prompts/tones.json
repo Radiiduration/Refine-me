@@ -1,0 +1,7 @@
+{
+  "formal":    { "name": "Formal",    "description": "Professional, polite, complete sentences, no slang or contractions." },
+  "kind":      { "name": "Kind",      "description": "Warm, considerate, softens requests, shows appreciation." },
+  "friendly":  { "name": "Friendly",  "description": "Casual and upbeat, conversational, light contractions." },
+  "concise":   { "name": "Concise",   "description": "As short as possible while keeping every key point." },
+  "confident": { "name": "Confident", "description": "Direct and assertive without being rude; no hedging words." }
+}
