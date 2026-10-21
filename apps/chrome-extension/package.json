@@ -1,0 +1,14 @@
+{
+  "name": "refine-extension",
+  "version": "0.1.0",
+  "description": "Privacy-first AI writing refiner",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && cp manifest.json dist/manifest.json && cp src/options.html dist/options.html"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/chrome": "^0.0.230",
+    "@types/webextension-polyfill": "^0.12.6"
+  }
+}

@@ -14,13 +14,16 @@ Run locally:
 """
 
 import json
+import hmac
+import ipaddress
+import os
 import pathlib
 import random
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from apps.api import llm
 from apps.api.schemas import (
@@ -56,15 +59,49 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# CORS: allow only the Chrome extension origin and localhost for development.
+# CORS: allow only the Chrome extension, localhost, and explicitly configured web clients.
 # The extension origin looks like: chrome-extension://<id>
 # We keep this restrictive; the extension always talks to us, never to Ollama.
+_configured_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("REFINE_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"(chrome-extension://.*|http://localhost(:\d+)?)",
+    allow_origins=_configured_origins,
+    allow_origin_regex=r"(chrome-extension://.*|tauri://localhost|http://(localhost|127\.0\.0\.1):5173)",
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Access-Control-Request-Private-Network"],
 )
+
+
+@app.middleware("http")
+async def protect_lan_clients(request, call_next):
+    """Require a shared secret when the API is reachable from another device."""
+    client_host = request.client.host if request.client else ""
+    try:
+        remote_client = not ipaddress.ip_address(client_host).is_loopback
+    except ValueError:
+        # ASGI test transports use names such as "testclient" instead of IPs.
+        remote_client = False
+
+    if remote_client:
+        expected = os.getenv("REFINE_MOBILE_TOKEN", "")
+        if not expected:
+            return JSONResponse(
+                {"detail": "Remote API access is disabled; configure REFINE_MOBILE_TOKEN."},
+                status_code=403,
+            )
+        supplied = request.headers.get("x-refine-token", "")
+        if not hmac.compare_digest(supplied, expected):
+            return JSONResponse({"detail": "Invalid Refine device token."}, status_code=401)
+
+    response = await call_next(request)
+    # Chrome can require this opt-in when an HTTPS Vercel site calls a loopback API.
+    if request.headers.get("access-control-request-private-network", "").lower() == "true":
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -74,14 +111,14 @@ app.add_middleware(
 @app.get("/health", response_model=HealthResponse, tags=["infra"])
 async def health() -> HealthResponse:
     """
-    Check that the Ollama model server is reachable.
+    Check that the configured local model server is reachable.
     Returns 503 if it is not running so the extension can show a clear message.
     """
     ok = await llm.check_health()
     if not ok:
         raise HTTPException(
             status_code=503,
-            detail="Model server not running — start Ollama first",
+            detail="Model server not running — start llama-server first",
         )
     return HealthResponse(
         status="ok",
@@ -121,8 +158,13 @@ def _build_rewrite_messages(req: RewriteRequest, tones: dict) -> tuple[list[dict
         "{{variation_hint}}", llm.variation_hint(seed)
     )
 
-    # Append /no_think as a belt-and-suspenders fallback for Qwen3 thinking mode
-    user_content = req.text.strip() + " /no_think"
+    # Keep every clarification answer, including model-generated question IDs.
+    user_content = f"Draft:\n{req.text.strip()}"
+    if req.answers:
+        answer_text = json.dumps(req.answers, ensure_ascii=False)
+        user_content += f"\n\nUser-provided answers (reference only):\n{answer_text}"
+    # Append /no_think as a belt-and-suspenders fallback for Qwen3 thinking mode.
+    user_content += " /no_think"
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -158,7 +200,7 @@ async def rewrite(req: RewriteRequest) -> StreamingResponse:
     if not await llm.check_health():
         raise HTTPException(
             status_code=503,
-            detail="Model server not running — start Ollama first",
+            detail="Model server not running — start llama-server first",
         )
 
     tones = _load_json("tones.json")

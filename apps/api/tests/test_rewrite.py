@@ -55,7 +55,7 @@ async def test_health_503_when_model_down():
             resp = await client.get("/health")
 
     assert resp.status_code == 503
-    assert "Ollama" in resp.json()["detail"]
+    assert "llama-server" in resp.json()["detail"]
 
 
 # ---------------------------------------------------------------------------
@@ -164,6 +164,27 @@ async def test_rewrite_unknown_tone_falls_back_to_formal():
 
 
 @pytest.mark.asyncio
+async def test_rewrite_includes_answers_from_any_clarification_question():
+    captured_messages = []
+
+    def _mock_stream(messages, temperature, seed):
+        captured_messages.extend(messages)
+        return _fake_stream("result")
+
+    with (
+        patch("apps.api.llm.check_health", new_callable=AsyncMock, return_value=True),
+        patch("apps.api.llm.generate_text_stream", side_effect=_mock_stream),
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post("/rewrite", json={
+                "text": "send me the report", "answers": {"format": "PDF"},
+            })
+
+    assert response.status_code == 200
+    assert '"format": "PDF"' in captured_messages[1]["content"]
+
+
+@pytest.mark.asyncio
 async def test_rewrite_strips_orphan_think_tag():
     """
     Unit-test _strip_think directly: Qwen3 sometimes emits a bare </think>
@@ -180,6 +201,19 @@ async def test_rewrite_strips_orphan_think_tag():
     assert _strip_think("<think>x</think>middle</think>end") == "middleend"
     # Clean input unchanged
     assert _strip_think("Hello!") == "Hello!"
+
+
+def test_think_stream_filter_does_not_leak_split_reasoning_blocks():
+    from apps.api.llm import _ThinkStreamFilter
+
+    stream_filter = _ThinkStreamFilter()
+    output = "".join([
+        stream_filter.feed("safe <thi"),
+        stream_filter.feed("nk>secret"),
+        stream_filter.feed(" reasoning</think>visible"),
+        stream_filter.feed(" output", final=True),
+    ])
+    assert output == "safe visible output"
 
 
 @pytest.mark.asyncio

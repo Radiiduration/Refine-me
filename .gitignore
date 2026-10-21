@@ -8,4 +8,8 @@ __pycache__/
 dist/
 build/
 .env.local
+**/local.properties
 node_modules/
+**/target/
+**/.gradle/
+release/

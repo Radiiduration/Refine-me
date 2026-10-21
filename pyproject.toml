@@ -1,3 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "refine-api"
+version = "0.1.0"
+description = "Refine — privacy-first AI writing refiner API"
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+# Discover apps.api and any future top-level packages automatically
+where = ["."]
+include = ["apps*"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["apps/api/tests"]

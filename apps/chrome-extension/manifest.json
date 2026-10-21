@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Refine",
+  "version": "0.1.0",
+  "description": "A private writing assistant powered by your local model",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "http://*/*",
+    "https://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Refine"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "refine-selection": {
+      "suggested_key": { "default": "Ctrl+Shift+R", "mac": "Command+Shift+R" },
+      "description": "Refine selected text"
+    }
+  }
+}
