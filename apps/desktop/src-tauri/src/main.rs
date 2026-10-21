@@ -1,7 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use arboard::Clipboard;
-use std::process::Command;
+use std::{process::Command, thread, time::Duration};
+use tauri::{GlobalShortcutManager, Manager};
 
 #[tauri::command]
 fn get_clipboard_text() -> Result<String, String> {
@@ -44,8 +45,60 @@ fn paste_text(text: String) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(target_os = "macos")]
+fn selected_text_from_frontmost_app() -> Option<String> {
+    // Use a temporary marker so a selection identical to the previous clipboard still works.
+    let mut clipboard = Clipboard::new().ok()?;
+    let previous = clipboard.get_text().ok();
+    let marker = format!("refine-selection-{}", std::process::id());
+    clipboard.set_text(marker.clone()).ok()?;
+    let copied = Command::new("osascript")
+        .args(["-e", "tell application \"System Events\" to keystroke \"c\" using {command down}"])
+        .status().ok()?.success();
+    if !copied {
+        if let Some(old) = previous { let _ = clipboard.set_text(old); }
+        return None;
+    }
+    thread::sleep(Duration::from_millis(180));
+    let selected = clipboard.get_text().ok().filter(|value| !value.trim().is_empty() && value != &marker);
+    if let Some(old) = previous { let _ = clipboard.set_text(old); }
+    selected
+}
+
+fn show_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
 fn main() {
   tauri::Builder::default()
+    .setup(|app| {
+      let handle = app.handle();
+      let mut shortcuts = app.global_shortcut_manager();
+      shortcuts.register("CommandOrControl+Shift+Space", move || {
+        #[cfg(target_os = "macos")]
+        let selected = selected_text_from_frontmost_app();
+        #[cfg(not(target_os = "macos"))]
+        let selected: Option<String> = None;
+        show_main_window(&handle);
+        if let Some(text) = selected.filter(|text| !text.trim().is_empty()) {
+          let _ = handle.emit_all("refine-selection", text);
+        }
+      })?;
+      if let Some(window) = app.get_window("main") {
+        let app_handle = app.handle();
+        window.on_window_event(move |event| {
+          if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+            api.prevent_close();
+            if let Some(window) = app_handle.get_window("main") { let _ = window.hide(); }
+          }
+        });
+      }
+      Ok(())
+    })
     .invoke_handler(tauri::generate_handler![get_clipboard_text, copy_text, paste_text])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

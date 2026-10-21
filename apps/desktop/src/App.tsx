@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
+import { listen } from '@tauri-apps/api/event';
 import {
   Check, CheckCircle2, ChevronDown, Clipboard, Command, Copy, FileEdit,
   HelpCircle, Loader2, Lock, RotateCcw, ShieldCheck, Sparkles, Wand2, X,
@@ -53,6 +54,19 @@ export default function App() {
     }).catch(() => undefined);
     return () => window.clearInterval(interval);
   }, [checkModel]);
+
+  useEffect(() => {
+    if (!IS_DESKTOP) return;
+    let unlisten: (() => void) | undefined;
+    void listen<string>('refine-selection', event => {
+      setText(event.payload);
+      setRewrittenText('');
+      setError('');
+      setNotice('Selected text captured. Choose a tone, then refine.');
+      setState('INPUT');
+    }).then(dispose => { unlisten = dispose; });
+    return () => unlisten?.();
+  }, []);
 
   const captureClipboard = async () => {
     try {
