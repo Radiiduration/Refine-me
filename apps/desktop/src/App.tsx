@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
-import { listen } from '@tauri-apps/api/event';
+import { getCurrent } from '@tauri-apps/api/window';
 import {
   Check, CheckCircle2, ChevronDown, Clipboard, Command, Copy, FileEdit,
   HelpCircle, Loader2, Lock, RotateCcw, ShieldCheck, Sparkles, Wand2, X,
 } from 'lucide-react';
 import './index.css';
+import RefineOverlay from './Overlay';
 
 const API_URL = 'http://localhost:8000';
 const IS_DESKTOP = window.location.protocol === 'tauri:';
+const IS_OVERLAY = IS_DESKTOP && getCurrent().label === 'overlay';
 const SAMPLE = 'hey can you send me the report when you get a chance';
 const BASE_TONES: Record<string, { name: string; description: string }> = {
   friendly: { name: 'Friendly', description: 'Warm and natural' },
@@ -22,6 +24,10 @@ type Tone = { name: string; description: string };
 type Question = { id: string; q: string; options: string[] };
 
 export default function App() {
+  return IS_OVERLAY ? <RefineOverlay /> : <WritingStudio />;
+}
+
+function WritingStudio() {
   const [state, setState] = useState<AppState>('INPUT');
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -54,23 +60,6 @@ export default function App() {
     }).catch(() => undefined);
     return () => window.clearInterval(interval);
   }, [checkModel]);
-
-  useEffect(() => {
-    if (!IS_DESKTOP) return;
-    const cleanups: Array<() => void> = [];
-    void listen<string>('refine-selection', event => {
-      setText(event.payload);
-      setRewrittenText('');
-      setError('');
-      setNotice('Selected text captured. Choose a tone, then refine.');
-      setState('INPUT');
-    }).then(dispose => cleanups.push(dispose));
-    void listen<string>('refine-selection-status', event => setNotice(event.payload))
-      .then(dispose => cleanups.push(dispose));
-    void listen<string>('refine-selection-error', event => setError(event.payload))
-      .then(dispose => cleanups.push(dispose));
-    return () => cleanups.forEach(dispose => dispose());
-  }, []);
 
   const captureClipboard = async () => {
     try {
@@ -180,7 +169,7 @@ export default function App() {
         <div className="sidebar-note">
           <span className="note-icon"><Lock size={16} /></span>
           <strong>Your words stay yours.</strong>
-          <p>Refine runs on your own local model. Select text anywhere, then press Control+R.</p>
+          <p>Close Refine to keep it in the background. Select text in any Mac app, then press Control+R for the floating icon.</p>
           <button onClick={() => setShowPrivacy(true)}>How privacy works <ChevronDown size={13} /></button>
         </div>
         <div className="sidebar-foot"><span className="mini-mark"><Sparkles size={13} /></span> Made for thoughtful writing <span className="version">0.1</span></div>

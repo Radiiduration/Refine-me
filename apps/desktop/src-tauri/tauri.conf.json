@@ -33,6 +33,20 @@
         "resizable": true,
         "fullscreen": false,
         "center": true
+      },
+      {
+        "label": "overlay",
+        "title": "Refine selection",
+        "url": "index.html",
+        "width": 58,
+        "height": 58,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "focus": false,
+        "visible": false
       }
     ]
   }
