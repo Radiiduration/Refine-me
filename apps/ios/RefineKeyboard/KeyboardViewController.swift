@@ -242,7 +242,7 @@ final class KeyboardViewController: UIInputViewController {
               let configured = store.string(forKey: SharedSettings.apiURL),
               let url = URL(string: configured.trimmingCharacters(in: .whitespacesAndNewlines) + "/rewrite"),
               isPrivateEndpoint(url),
-              let token = store.string(forKey: SharedSettings.token), !token.isEmpty else {
+              !TokenStore.load(legacy: store.string(forKey: SharedSettings.token)).isEmpty else {
             statusLabel.text = "Set a private API URL and token in Refine"
             return
         }
@@ -261,7 +261,7 @@ final class KeyboardViewController: UIInputViewController {
             var request = URLRequest(url: url, timeoutInterval: 120)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue(token, forHTTPHeaderField: "X-Refine-Token")
+            request.setValue(TokenStore.load(), forHTTPHeaderField: "X-Refine-Token")
             request.httpBody = try JSONSerialization.data(withJSONObject: [
                 "text": selected,
                 "tone": "kind",
@@ -271,7 +271,8 @@ final class KeyboardViewController: UIInputViewController {
                 ],
                 "seed": Int.random(in: 0...99_999)
             ])
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let session = URLSession(configuration: .ephemeral, delegate: RefineNoRedirectDelegate(), delegateQueue: nil)
+            let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                 let message = (try? JSONSerialization.jsonObject(with: data) as? [String: String])?["detail"]
                 throw KeyboardError.server(message ?? "Refine API returned an error")
@@ -289,7 +290,7 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     private func isPrivateEndpoint(_ url: URL) -> Bool {
-        guard url.scheme == "http" || url.scheme == "https", let host = url.host?.lowercased() else { return false }
+        guard url.scheme == "https", let host = url.host?.lowercased() else { return false }
         if host == "localhost" || host.hasSuffix(".local") { return true }
         let parts = host.split(separator: ".").compactMap { UInt8($0) }
         guard parts.count == 4 else { return false }
@@ -303,6 +304,15 @@ final class KeyboardViewController: UIInputViewController {
             let chunk = String(event.dropFirst(6))
             return chunk == "[DONE]" ? nil : chunk.replacingOccurrences(of: "\\n", with: "\n")
         }.joined()
+    }
+}
+
+private final class RefineNoRedirectDelegate: NSObject, URLSessionTaskDelegate {
+    func urlSession(_ session: URLSession, task: URLSessionTask,
+                    willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest,
+                    completionHandler: @escaping (URLRequest?) -> Void) {
+        completionHandler(nil)
     }
 }
 

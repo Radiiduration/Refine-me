@@ -14,12 +14,14 @@ targets:
     platform: iOS
     sources:
       - path: RefineApp
+      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.refine.writing
         INFOPLIST_FILE: RefineApp/Info.plist
         CODE_SIGN_ENTITLEMENTS: RefineApp/Refine.entitlements
         GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_KEY_RefineKeychainAccessGroup: "$(AppIdentifierPrefix)com.refine.writing.shared"
     dependencies:
       - target: RefineKeyboard
         embed: true
@@ -28,6 +30,7 @@ targets:
     platform: iOS
     sources:
       - path: RefineKeyboard
+      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.refine.writing.keyboard
@@ -35,3 +38,4 @@ targets:
         CODE_SIGN_ENTITLEMENTS: RefineKeyboard/RefineKeyboard.entitlements
         APPLICATION_EXTENSION_API_ONLY: YES
         GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_KEY_RefineKeychainAccessGroup: "$(AppIdentifierPrefix)com.refine.writing.shared"

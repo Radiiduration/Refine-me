@@ -74,10 +74,10 @@ class SettingsActivity : Activity() {
         })
         page.addView(hero, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(22) })
 
-        title(page, "Connect your computer", "Your draft is rewritten by the model on your computer, over your private Wi-Fi.")
+        title(page, "Connect your computer", "Your draft is rewritten by the model on your computer over an encrypted HTTPS connection.")
 
-        val apiUrl = field("http://192.168.1.20:8001", prefs.getString("api_url", "") ?: "")
-        val token = field("Paste the token from your computer", prefs.getString("token", "") ?: "", secret = true)
+        val apiUrl = field("https://refine.local:8001", prefs.getString("api_url", "") ?: "")
+        val token = field("Paste the token from your computer", TokenVault.read(this), secret = true)
         val connectionCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), dp(13), dp(14), dp(4))
@@ -95,9 +95,9 @@ class SettingsActivity : Activity() {
             setPadding(dp(3), dp(9), dp(3), dp(4))
         })
         page.addView(action("Save private connection", primary = true) {
-            prefs.edit().putString("api_url", apiUrl.text.toString().trim().trimEnd('/'))
-                .putString("token", token.text.toString().trim()).apply()
-            showStatus("Connection saved securely on this device.")
+            prefs.edit().putString("api_url", apiUrl.text.toString().trim().trimEnd('/')).apply()
+            TokenVault.write(this, token.text.toString().trim())
+            showStatus("Connection saved on this device.")
         }, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(12); bottomMargin = dp(22) })
 
         title(page, "Turn on the Refine keyboard", "Android will ask you to enable it, then choose it whenever you want to write.")

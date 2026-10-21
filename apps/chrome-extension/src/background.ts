@@ -1,14 +1,19 @@
 const DEFAULT_API = "http://localhost:8000";
 
 async function apiUrl() {
-  const { apiUrl } = await chrome.storage.local.get({ apiUrl: DEFAULT_API });
-  return String(apiUrl).replace(/\/$/, "");
+  const stored = await chrome.storage.local.get({ apiUrl: DEFAULT_API });
+  const url = new URL(String(stored.apiUrl));
+  if (url.protocol !== "http:" || !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) || url.username || url.password || url.search || url.hash) {
+    throw new Error("Refine only connects to a local API address.");
+  }
+  return url.origin + url.pathname.replace(/\/$/, "");
 }
 
 async function callApi(endpoint: string, method = "GET", body?: unknown) {
   const base = await apiUrl();
   const response = await fetch(`${base}${endpoint}`, {
     method,
+    redirect: "error",
     headers: { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(60_000),

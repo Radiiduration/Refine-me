@@ -20,10 +20,12 @@ In a terminal on the Mac, create a private token and start the API:
 
 ```sh
 export REFINE_MOBILE_TOKEN="$(openssl rand -hex 32)"
+export REFINE_TLS_CERTFILE="/path/to/trusted-cert.pem"
+export REFINE_TLS_KEYFILE="/path/to/private-key.pem"
 make mobile-api
 ```
 
-The phone and Mac must be on the same trusted Wi-Fi network. Set the API address in Refine to `http://<your-Mac-Wi-Fi-IP>:8001`. Requests from other devices require the token; the model server stays bound to loopback. Keep the token private. The default `make api` command remains loopback-only on port 8000 for the desktop and web clients.
+The phone and Mac must be on the same trusted Wi-Fi network. Provision a TLS certificate trusted by the phone and containing the Mac's hostname/IP as a subject alternative name. Set the API address in Refine to `https://<your-Mac-hostname>:8001`. Requests from other devices require the token; the model server stays bound to loopback. Android encrypts the saved token with an Android Keystore key. Keep the token private. The default `make api` command remains loopback-only on port 8000 for the desktop and web clients. The mobile server refuses to start without the TLS certificate and key.
 
 The keyboard sends only selected text to the configured API, which uses the local model. It refuses non-private network hosts. Password fields and apps that prohibit third-party keyboards are controlled by Android and may not allow Refine Keyboard. Android requires enabling/selecting the IME; Background App Refresh is an iPhone setting and is not involved.
 

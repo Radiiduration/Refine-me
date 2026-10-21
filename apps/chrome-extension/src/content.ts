@@ -225,6 +225,10 @@ class RefineOverlay {
     if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
       const { start, end } = this.inputRange || { start: 0, end: el.value.length };
       const value = el.value;
+      if (value.slice(start, end) !== this.sourceText) {
+        this.card("Draft changed", '<p class="muted">Your draft changed while Refine was working. Select the original text again before replacing it.</p>');
+        return;
+      }
       const next = value.slice(0, start) + this.output + value.slice(end);
       const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), "value")?.set;
       setter?.call(el, next);
@@ -233,14 +237,18 @@ class RefineOverlay {
     } else {
       const selection = window.getSelection();
       if (selection && this.editableRange) {
+        const current = this.editableRange.toString();
+        if (current !== this.sourceText || !el.contains(this.editableRange.commonAncestorContainer)) {
+          this.card("Draft changed", '<p class="muted">Your draft changed while Refine was working. Select the original text again before replacing it.</p>');
+          return;
+        }
         el.focus();
         selection.removeAllRanges();
         selection.addRange(this.editableRange);
         document.execCommand("insertText", false, this.output);
       } else {
-        el.focus();
-        el.textContent = el.innerText.replace(this.sourceText, this.output);
-        el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: this.output }));
+        this.card("Selection unavailable", '<p class="muted">Please select the original text again before replacing it.</p>');
+        return;
       }
     }
     this.host.style.display = "none";

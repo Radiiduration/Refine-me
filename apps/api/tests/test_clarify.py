@@ -204,12 +204,12 @@ async def test_clarify_clamps_options_to_max_5():
 
 
 # ---------------------------------------------------------------------------
-# POST /clarify — fallback on LLM failure
+# POST /clarify — failures are surfaced
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_clarify_returns_false_on_json_error():
-    """If generate_json raises (bad JSON after retry), return needs_clarification=false."""
+async def test_clarify_returns_gateway_error_on_json_error():
+    """Invalid model output must not be reported as a successful clear-draft decision."""
     with patch(
         "apps.api.llm.generate_json",
         new_callable=AsyncMock,
@@ -220,15 +220,12 @@ async def test_clarify_returns_false_on_json_error():
         ) as client:
             resp = await client.post("/clarify", json={"text": "some text"})
 
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["needs_clarification"] is False
-    assert body["questions"] == []
+    assert resp.status_code == 502
 
 
 @pytest.mark.asyncio
-async def test_clarify_returns_false_on_network_error():
-    """If the model server is unreachable, return needs_clarification=false."""
+async def test_clarify_returns_gateway_error_on_network_error():
+    """Model connectivity errors must be surfaced as gateway errors."""
     import httpx
 
     with patch(
@@ -241,9 +238,7 @@ async def test_clarify_returns_false_on_network_error():
         ) as client:
             resp = await client.post("/clarify", json={"text": "some text"})
 
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["needs_clarification"] is False
+    assert resp.status_code == 502
 
 
 # ---------------------------------------------------------------------------

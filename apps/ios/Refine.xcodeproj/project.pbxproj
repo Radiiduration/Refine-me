@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		43E89F5419C77E8104BD23F7 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D3CD9FC9708BF8CBEF0D8E /* TokenStore.swift */; };
 		4EAF9BAFBD4AE7298A4A9003 /* KeyboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FDFBE005FC4E2B06B195D53 /* KeyboardViewController.swift */; };
+		6FD158389A38052E77F29AB7 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D3CD9FC9708BF8CBEF0D8E /* TokenStore.swift */; };
 		72413D02E494BB37FA8C91E5 /* RefineKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9AFC5E85DE4D36FDE75305BB /* RefineKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A646BCF14FCAE874CD41E9C4 /* RefineApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DEEDFCD3CE6E524237BF6E /* RefineApp.swift */; };
 /* End PBXBuildFile section */
@@ -38,6 +40,7 @@
 
 /* Begin PBXFileReference section */
 		0449A478C0D99DC7F6F5305D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		06D3CD9FC9708BF8CBEF0D8E /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
 		0F0E90B875B1A40DCD641071 /* RefineKeyboard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RefineKeyboard.entitlements; sourceTree = "<group>"; };
 		1A178D3A99C2DD710C24EC4A /* Refine.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Refine.entitlements; sourceTree = "<group>"; };
 		1FDFBE005FC4E2B06B195D53 /* KeyboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardViewController.swift; sourceTree = "<group>"; };
@@ -55,6 +58,14 @@
 				9AFC5E85DE4D36FDE75305BB /* RefineKeyboard.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		92595A16B0047C852C9C4EF4 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				06D3CD9FC9708BF8CBEF0D8E /* TokenStore.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		9C4C17D43C5693C59178BE06 /* RefineApp */ = {
@@ -82,6 +93,7 @@
 			children = (
 				9C4C17D43C5693C59178BE06 /* RefineApp */,
 				E258205A28CF8FE2750332D9 /* RefineKeyboard */,
+				92595A16B0047C852C9C4EF4 /* Shared */,
 				401F68DEE37A6E0B6CA704B1 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -168,6 +180,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A646BCF14FCAE874CD41E9C4 /* RefineApp.swift in Sources */,
+				43E89F5419C77E8104BD23F7 /* TokenStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -176,6 +189,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4EAF9BAFBD4AE7298A4A9003 /* KeyboardViewController.swift in Sources */,
+				6FD158389A38052E77F29AB7 /* TokenStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -319,6 +333,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RefineApp/Info.plist;
+				INFOPLIST_KEY_RefineKeychainAccessGroup = "$(AppIdentifierPrefix)com.refine.writing.shared";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -337,6 +352,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RefineApp/Info.plist;
+				INFOPLIST_KEY_RefineKeychainAccessGroup = "$(AppIdentifierPrefix)com.refine.writing.shared";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -354,6 +370,7 @@
 				CODE_SIGN_ENTITLEMENTS = RefineKeyboard/RefineKeyboard.entitlements;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RefineKeyboard/Info.plist;
+				INFOPLIST_KEY_RefineKeychainAccessGroup = "$(AppIdentifierPrefix)com.refine.writing.shared";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -372,6 +389,7 @@
 				CODE_SIGN_ENTITLEMENTS = RefineKeyboard/RefineKeyboard.entitlements;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RefineKeyboard/Info.plist;
+				INFOPLIST_KEY_RefineKeychainAccessGroup = "$(AppIdentifierPrefix)com.refine.writing.shared";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

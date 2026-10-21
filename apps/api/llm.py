@@ -14,6 +14,7 @@ LLM_BACKEND = os.getenv("LLM_BACKEND", "llamacpp")
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://localhost:8080/v1").rstrip("/")
 LLM_MODEL = os.getenv("LLM_MODEL", "qwen3-4b-q4km")
 TIMEOUT = 60.0
+MAX_OUTPUT_TOKENS = 2048
 VARIATION_HINTS = [
     "lead with the main point", "use shorter sentences", "warmer opening",
     "more direct", "stronger action verbs", "simpler vocabulary",
@@ -78,7 +79,7 @@ def _build_payload(messages: list[dict], *, stream: bool, temperature: float,
             "messages": messages,
             "stream": stream,
             "think": False,
-            "options": {"temperature": temperature, "top_p": 0.9},
+            "options": {"temperature": temperature, "top_p": 0.9, "num_predict": MAX_OUTPUT_TOKENS},
         }
         if seed is not None:
             payload["options"]["seed"] = seed
@@ -92,6 +93,7 @@ def _build_payload(messages: list[dict], *, stream: bool, temperature: float,
         "stream": stream,
         "temperature": temperature,
         "top_p": 0.9,
+        "max_tokens": MAX_OUTPUT_TOKENS,
         "chat_template_kwargs": {"enable_thinking": False},
     }
     if seed is not None:

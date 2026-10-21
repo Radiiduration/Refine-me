@@ -11,7 +11,9 @@ api:
 
 mobile-api:
 	@test -n "$${REFINE_MOBILE_TOKEN:-}" || (echo "Set REFINE_MOBILE_TOKEN to a long random value before exposing the API to your phone."; exit 1)
-	$(PYTHON) -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8001
+	@test "$${#REFINE_MOBILE_TOKEN}" -ge 32 || (echo "REFINE_MOBILE_TOKEN must contain at least 32 characters."; exit 1)
+	@test -n "$${REFINE_TLS_CERTFILE:-}" -a -n "$${REFINE_TLS_KEYFILE:-}" || (echo "Set REFINE_TLS_CERTFILE and REFINE_TLS_KEYFILE to a trusted HTTPS certificate and key."; exit 1)
+	$(PYTHON) -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8001 --ssl-certfile "$${REFINE_TLS_CERTFILE}" --ssl-keyfile "$${REFINE_TLS_KEYFILE}"
 
 ios-project:
 	cd apps/ios && xcodegen generate
@@ -20,7 +22,7 @@ ios-build: ios-project
 	xcodebuild -project apps/ios/Refine.xcodeproj -scheme Refine -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 
 android-build:
-	cd apps/android && ./gradlew assembleDebug
+	cd apps/android/gradle/wrapper && shasum -a 256 -c gradle-wrapper.jar.sha256 && cd ../.. && ./gradlew assembleDebug
 
 web:
 	cd apps/web && npm run dev

@@ -16,7 +16,6 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import org.json.JSONObject
-import java.net.InetAddress
 import java.net.HttpURLConnection
 import java.net.URL
 import java.io.IOException
@@ -182,7 +181,7 @@ class RefineImeService : InputMethodService() {
     private fun requestRewrite(selected: String) {
         val prefs = getSharedPreferences("refine", Context.MODE_PRIVATE)
         val base = prefs.getString("api_url", "").orEmpty().trimEnd('/')
-        val token = prefs.getString("token", "").orEmpty()
+        val token = TokenVault.read(this)
         if (!privateEndpoint(base) || token.isBlank()) {
             setStatus("Set a private API URL and token in Refine")
             return
@@ -231,6 +230,7 @@ class RefineImeService : InputMethodService() {
     private fun requestRewrite(base: String, token: String, text: String): String {
         val connection = (URL("$base/rewrite").openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
+            instanceFollowRedirects = false
             connectTimeout = 8_000
             readTimeout = 120_000
             doOutput = true
@@ -265,10 +265,19 @@ class RefineImeService : InputMethodService() {
 
     private fun privateEndpoint(base: String): Boolean = runCatching {
         val url = URL(base)
-        if (url.protocol != "http" && url.protocol != "https") return false
+        if (url.protocol != "https") return false
         val host = url.host.lowercase()
-        host == "localhost" || host.endsWith(".local") || InetAddress.getByName(host).isSiteLocalAddress
+        if (url.userInfo != null) return false
+        host == "localhost" || host.endsWith(".local") || privateIPv4(host)
     }.getOrDefault(false)
+
+    private fun privateIPv4(host: String): Boolean {
+        val segments = host.split('.')
+        val octets = segments.mapNotNull { it.toIntOrNull()?.takeIf { n -> n in 0..255 } }
+        if (segments.size != 4 || octets.size != 4) return false
+        return octets[0] == 10 || octets[0] == 192 && octets[1] == 168 ||
+            octets[0] == 172 && octets[1] in 16..31
+    }
 
     private fun showGoalMenu(anchor: View) {
         val menu = PopupMenu(this, anchor)

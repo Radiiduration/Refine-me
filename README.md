@@ -11,7 +11,7 @@ Install [llama.cpp](https://github.com/ggml-org/llama.cpp) (Homebrew: `brew inst
 ```sh
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -r apps/api/requirements.txt
+pip install -r apps/api/requirements.lock
 ```
 
 Run these in separate terminals from the repository root:
@@ -23,11 +23,11 @@ make api           # local API at http://127.0.0.1:8000
 
 ## iPhone keyboard
 
-The iOS keyboard runs as an app extension and uses the same local model on your Mac. Setup, LAN token protection, Xcode signing, and keyboard installation steps are in [apps/ios/README.md](apps/ios/README.md). The default `make api` stays loopback-only; use the documented `make mobile-api` command only when connecting an iPhone on your trusted local network.
+The iOS keyboard runs as an app extension and uses the same local model on your Mac. Setup, HTTPS LAN token protection, Xcode signing, and keyboard installation steps are in [apps/ios/README.md](apps/ios/README.md). The default `make api` stays loopback-only; use `make mobile-api` only with a trusted TLS certificate and a long random token. Do not expose the development API directly to the public internet.
 
 ## Android keyboard
 
-Build the installable debug APK with `make android-build`. Open Refine on the phone, save the Mac's private API address and `REFINE_MOBILE_TOKEN`, then enable **Refine Keyboard** under Android's keyboard/input-method settings and select it from the keyboard switcher. Android uses a system keyboard (IME), not a floating bubble, and does not need Background App Refresh. See [apps/android/README.md](apps/android/README.md) for installation and LAN setup.
+Build the installable debug APK with `make android-build`. Open Refine on the phone, save the Mac's HTTPS API address and `REFINE_MOBILE_TOKEN`, then enable **Refine Keyboard** under Android's keyboard/input-method settings and select it from the keyboard switcher. Android uses a system keyboard (IME), not a floating bubble, and does not need Background App Refresh. See [apps/android/README.md](apps/android/README.md) for installation and LAN setup.
 
 The model server uses roughly 2.5 GB for the quantized weights; actual memory varies with context and runtime. Change the model and API settings in `apps/api/.env` if needed. `apps/api/llm.py` is the only module that interprets those backend settings.
 
@@ -35,7 +35,7 @@ The model server uses roughly 2.5 GB for the quantized weights; actual memory va
 
 ```sh
 cd apps/web
-npm install
+npm ci
 npm run dev
 ```
 
@@ -43,23 +43,23 @@ Open the local address printed by Vite. The editor talks to the local Refine API
 
 ### Deploy the web editor to Vercel
 
-Import this repository in Vercel and set the project root to `apps/web`; the included `apps/web/vercel.json` configures the Vite build. The deployed editor is static and does not host an AI model. To use it with your local model, open **Private by design → Local Refine API** in the editor; the current mobile setup listens at `http://localhost:8001` (the default `make api` setup uses `http://localhost:8000`). Set `REFINE_ALLOWED_ORIGINS` when starting the API to the exact HTTPS origin Vercel gives your project (for example, `https://your-project.vercel.app`) and restart the API. Chrome may ask to allow the site to reach a local network device. Draft text will then go from your browser to your own local API and model.
+Import this repository in Vercel and set the project root to `apps/web`; the included `apps/web/vercel.json` configures the Vite build. The deployed editor is static and does not host an AI model. To use it with a self-hosted API, configure a trusted HTTPS endpoint, set `REFINE_ALLOWED_ORIGINS` to the exact HTTPS Vercel origin, and enter the device token in **Your privacy → Device token**. The token stays in page memory and is cleared when the page closes or reloads. The API requires the token for non-loopback clients and configured web origins, and accepts only configured CORS origins. Do not expose the development API directly to the public internet.
 
 ## Chrome extension
 
 ```sh
 cd apps/chrome-extension
-npm install
+npm ci
 npm run build
 ```
 
-In Chrome, open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `apps/chrome-extension/dist`. Chrome asks for access to websites so Refine can notice a text selection and show its floating button. Select text in a browser writing field and open the button to choose Work or Personal context and a tone, then review the rewrite before replacing the selection. Refine reads selected text only after you open its button. The extension also adds a right-click action and `Ctrl+Shift+R` / `Command+Shift+R` shortcut. Change the local API address from the extension details page → **Extension options**. Only loopback HTTP addresses are accepted.
+In Chrome, open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `apps/chrome-extension/dist`. Refine uses Chrome's temporary active-tab permission after you invoke its toolbar action, context menu, or shortcut; it does not run a content script across every website in the background. Select text in a browser writing field and invoke Refine to choose a context and tone, then review the rewrite before replacing the selection. The extension also adds a right-click action and `Ctrl+Shift+R` / `Command+Shift+R` shortcut. Its API setting accepts loopback HTTP only.
 
 ## Desktop app
 
 ```sh
 cd apps/desktop
-npm install
+npm ci
 npm run tauri dev
 ```
 
@@ -80,7 +80,7 @@ curl -N http://127.0.0.1:8000/rewrite \
 
 ## Privacy and scope
 
-Draft text is sent only to the configured local or self-hosted model server through the local Refine API. No logging of draft content, telemetry, third-party model calls, user accounts, or cloud sync are included. The extension permissions are limited to active tab interaction, local storage, context menus, and the local API address.
+Draft text is sent only to the configured local or self-hosted model server through the Refine API. The mobile API requires HTTPS and a device token; it is intended for trusted private networks, not direct public exposure. No draft logging, telemetry, third-party model calls, user accounts, or cloud sync are included. The extension requests active-tab interaction, local storage, context menus, and access to the loopback API.
 
 Refine is an independent project and is not affiliated with Grammarly. The implementation follows observed public behavior and the project specification; Grammarly account-only editor behavior was not reverse engineered.
 

@@ -11,16 +11,7 @@
   ],
   "host_permissions": [
     "http://localhost/*",
-    "http://127.0.0.1/*",
-    "http://*/*",
-    "https://*/*"
-  ],
-  "content_scripts": [
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
+    "http://127.0.0.1/*"
   ],
   "background": {
     "service_worker": "background.js"

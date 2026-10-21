@@ -33,22 +33,25 @@ export default function App() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [apiUrl, setApiUrl] = useState(() => localStorage.getItem('refine.apiUrl') || DEFAULT_API_URL);
   const [apiUrlDraft, setApiUrlDraft] = useState(() => localStorage.getItem('refine.apiUrl') || DEFAULT_API_URL);
+  const [apiToken, setApiToken] = useState('');
+  const [apiTokenDraft, setApiTokenDraft] = useState('');
+  const authHeaders: Record<string, string> = apiToken ? { 'X-Refine-Token': apiToken } : {};
 
   const toneEntries = useMemo(() => Object.entries(tones), [tones]);
 
   const checkModel = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl.replace(/\/$/, '')}/health`, { signal: AbortSignal.timeout(2500) });
+      const response = await fetch(`${apiUrl.replace(/\/$/, '')}/health`, { headers: authHeaders, redirect: 'error', signal: AbortSignal.timeout(2500) });
       setModelOnline(response.ok);
     } catch {
       setModelOnline(false);
     }
-  }, [apiUrl]);
+  }, [apiUrl, apiToken]);
 
   useEffect(() => {
     void checkModel();
     const interval = window.setInterval(checkModel, 30_000);
-    fetch(`${apiUrl.replace(/\/$/, '')}/tones`).then(r => r.ok ? r.json() : null).then(data => {
+    fetch(`${apiUrl.replace(/\/$/, '')}/tones`, { headers: authHeaders, redirect: 'error' }).then(r => r.ok ? r.json() : null).then(data => {
       if (data && typeof data === 'object') setTones(data);
     }).catch(() => undefined);
     return () => window.clearInterval(interval);
@@ -65,7 +68,7 @@ export default function App() {
 
   const transitionToTone = async () => {
     try {
-      const response = await fetch(`${apiUrl.replace(/\/$/, '')}/tones`);
+      const response = await fetch(`${apiUrl.replace(/\/$/, '')}/tones`, { headers: authHeaders, redirect: 'error' });
       if (!response.ok) throw new Error('Tone options are unavailable. Check that Refine is running.');
       setTones(await response.json());
       setState('TONE_SELECT');
@@ -80,7 +83,7 @@ export default function App() {
     setLoading(true); setError(''); setNotice(''); setState('CLARIFYING');
     try {
       const response = await fetch(`${apiUrl.replace(/\/$/, '')}/clarify`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders }, redirect: 'error',
         body: JSON.stringify({ text, context: { app: 'refine-web' } }),
       });
       if (!response.ok) throw new Error('Could not check the draft. Is the local model running?');
@@ -99,7 +102,7 @@ export default function App() {
     setRewrittenText(''); setState('REWRITING');
     try {
       const response = await fetch(`${apiUrl.replace(/\/$/, '')}/rewrite`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders }, redirect: 'error',
         body: JSON.stringify({ text, tone, answers, seed: Math.floor(Math.random() * 100000) }),
       });
       if (!response.ok) throw new Error(response.status === 503
@@ -237,7 +240,7 @@ export default function App() {
         </div>
       </main>
 
-      {showPrivacy && <div className="modal-backdrop" onClick={() => setShowPrivacy(false)}><section className="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-title" onClick={event => event.stopPropagation()}><button className="modal-close" onClick={() => setShowPrivacy(false)} aria-label="Close"><X size={18} /></button><span className="modal-icon"><ShieldCheck size={22} /></span><div className="panel-kicker">REFINE · PRIVATE BY DESIGN</div><h2 id="privacy-title">Your words stay with you.</h2><p>Refine sends your draft to the API address below. When you use the default address, requests stay on this computer and use your local model.</p><label className="api-setting-label" htmlFor="refine-api-url">Local Refine API</label><input id="refine-api-url" className="api-setting-input" value={apiUrlDraft} onChange={event => setApiUrlDraft(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { const value = apiUrlDraft.trim().replace(/\/$/, ''); localStorage.setItem('refine.apiUrl', value); setApiUrl(value); void checkModel(); setShowPrivacy(false); } }} placeholder="http://localhost:8000" /><small className="api-setting-help">Use your local API address. The hosted editor does not host a model.</small><div className="privacy-points"><div><CheckCircle2 size={17} /><span><b>No account needed</b><small>Nothing to sign up for or sync.</small></span></div><div><CheckCircle2 size={17} /><span><b>Your model, your machine</b><small>Drafts go to your configured local model.</small></span></div><div><CheckCircle2 size={17} /><span><b>You stay in control</b><small>Your original text stays untouched until you choose a rewrite.</small></span></div></div><button className="modal-done" onClick={() => { const value = apiUrlDraft.trim().replace(/\/$/, ''); localStorage.setItem('refine.apiUrl', value); setApiUrl(value); void checkModel(); setShowPrivacy(false); }}>Save connection</button></section></div>}
+      {showPrivacy && <div className="modal-backdrop" onClick={() => setShowPrivacy(false)}><section className="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-title" onClick={event => event.stopPropagation()}><button className="modal-close" onClick={() => setShowPrivacy(false)} aria-label="Close"><X size={18} /></button><span className="modal-icon"><ShieldCheck size={22} /></span><div className="panel-kicker">REFINE · PRIVATE BY DESIGN</div><h2 id="privacy-title">Your words stay with you.</h2><p>Refine sends your draft to the API address below. When you use the default address, requests stay on this computer and use your local model.</p><label className="api-setting-label" htmlFor="refine-api-url">Local Refine API</label><input id="refine-api-url" className="api-setting-input" value={apiUrlDraft} onChange={event => setApiUrlDraft(event.target.value)} placeholder="http://localhost:8000" /><small className="api-setting-help">Use HTTPS for a remote API. The hosted editor does not host a model.</small><label className="api-setting-label" htmlFor="refine-api-token">Device token (needed for remote API)</label><input id="refine-api-token" type="password" autoComplete="off" className="api-setting-input" value={apiTokenDraft} onChange={event => setApiTokenDraft(event.target.value)} placeholder="Held in memory until this page closes" /><div className="privacy-points"><div><CheckCircle2 size={17} /><span><b>No account needed</b><small>Nothing to sign up for or sync.</small></span></div><div><CheckCircle2 size={17} /><span><b>Your model, your machine</b><small>Drafts go to your configured model.</small></span></div><div><CheckCircle2 size={17} /><span><b>You stay in control</b><small>Your original text stays untouched until you choose a rewrite.</small></span></div></div><button className="modal-done" onClick={() => { const value = apiUrlDraft.trim().replace(/\/$/, ''); localStorage.setItem('refine.apiUrl', value); setApiToken(apiTokenDraft); setApiUrl(value); void checkModel(); setShowPrivacy(false); }}>Save connection</button></section></div>}
     </div>
   );
 }
