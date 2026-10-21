@@ -2,7 +2,10 @@
 
 use arboard::Clipboard;
 use std::{process::Command, thread, time::Duration};
-use tauri::{GlobalShortcutManager, LogicalPosition, Manager, PhysicalSize};
+use tauri::{
+    CustomMenuItem, GlobalShortcutManager, LogicalPosition, Manager, PhysicalSize, SystemTray,
+    SystemTrayEvent, SystemTrayMenu,
+};
 
 #[tauri::command]
 fn get_clipboard_text() -> Result<String, String> {
@@ -124,7 +127,32 @@ fn pointer_position() -> Option<(i32, i32)> {
 }
 
 fn main() {
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(CustomMenuItem::new("open", "Open Refine"))
+        .add_item(CustomMenuItem::new("quit", "Quit Refine"));
+
     tauri::Builder::default()
+        .system_tray(
+            SystemTray::new()
+                .with_icon(tauri::Icon::Rgba {
+                    rgba: include_bytes!("../icons/tray.rgba").to_vec(),
+                    width: 32,
+                    height: 32,
+                })
+                .with_tooltip("Refine")
+                .with_menu_on_left_click(true)
+                .with_menu(tray_menu),
+        )
+        .on_system_tray_event(|app, event| match event {
+            SystemTrayEvent::MenuItemClick { id, .. } if id == "open" => {
+                if let Some(window) = app.get_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            SystemTrayEvent::MenuItemClick { id, .. } if id == "quit" => app.exit(0),
+            _ => {}
+        })
         .setup(|app| {
             let handle = app.handle();
             let mut shortcuts = app.global_shortcut_manager();
