@@ -46,23 +46,45 @@ fn paste_text(text: String) -> Result<(), String> {
 }
 
 #[cfg(target_os = "macos")]
-fn selected_text_from_frontmost_app() -> Option<String> {
+fn selected_text_from_frontmost_app() -> Result<Option<String>, String> {
     // Use a temporary marker so a selection identical to the previous clipboard still works.
-    let mut clipboard = Clipboard::new().ok()?;
+    let mut clipboard =
+        Clipboard::new().map_err(|_| "Could not access the clipboard.".to_string())?;
     let previous = clipboard.get_text().ok();
     let marker = format!("refine-selection-{}", std::process::id());
-    clipboard.set_text(marker.clone()).ok()?;
-    let copied = Command::new("osascript")
-        .args(["-e", "tell application \"System Events\" to keystroke \"c\" using {command down}"])
-        .status().ok()?.success();
-    if !copied {
-        if let Some(old) = previous { let _ = clipboard.set_text(old); }
-        return None;
+    clipboard
+        .set_text(marker.clone())
+        .map_err(|_| "Could not prepare the selection clipboard.".to_string())?;
+    let output = Command::new("osascript")
+        .args([
+            "-e",
+            "tell application \"System Events\" to keystroke \"c\" using {command down}",
+        ])
+        .output();
+    let output = match output {
+        Ok(output) => output,
+        Err(_) => {
+            if let Some(old) = previous {
+                let _ = clipboard.set_text(old);
+            }
+            return Err("Refine could not send the copy shortcut to the selected app.".to_string());
+        }
+    };
+    if !output.status.success() {
+        if let Some(old) = previous {
+            let _ = clipboard.set_text(old);
+        }
+        return Err("macOS blocked selection capture. Allow Refine under System Settings → Privacy & Security → Accessibility, then relaunch Refine.".to_string());
     }
     thread::sleep(Duration::from_millis(180));
-    let selected = clipboard.get_text().ok().filter(|value| !value.trim().is_empty() && value != &marker);
-    if let Some(old) = previous { let _ = clipboard.set_text(old); }
-    selected
+    let selected = clipboard
+        .get_text()
+        .ok()
+        .filter(|value| !value.trim().is_empty() && value != &marker);
+    if let Some(old) = previous {
+        let _ = clipboard.set_text(old);
+    }
+    Ok(selected)
 }
 
 fn show_main_window(app: &tauri::AppHandle) {
@@ -74,18 +96,20 @@ fn show_main_window(app: &tauri::AppHandle) {
 }
 
 fn main() {
-  tauri::Builder::default()
+    tauri::Builder::default()
     .setup(|app| {
       let handle = app.handle();
       let mut shortcuts = app.global_shortcut_manager();
-      shortcuts.register("CommandOrControl+Shift+Space", move || {
+      shortcuts.register("Control+R", move || {
         #[cfg(target_os = "macos")]
-        let selected = selected_text_from_frontmost_app();
+        let capture = selected_text_from_frontmost_app();
         #[cfg(not(target_os = "macos"))]
-        let selected: Option<String> = None;
+        let capture: Result<Option<String>, String> = Ok(None);
         show_main_window(&handle);
-        if let Some(text) = selected.filter(|text| !text.trim().is_empty()) {
-          let _ = handle.emit_all("refine-selection", text);
+        match capture {
+          Ok(Some(text)) if !text.trim().is_empty() => { let _ = handle.emit_all("refine-selection", text); }
+          Ok(_) => { let _ = handle.emit_all("refine-selection-status", "No selected text was captured. Select text in another app, then press Control+R."); }
+          Err(message) => { let _ = handle.emit_all("refine-selection-error", message); }
         }
       })?;
       if let Some(window) = app.get_window("main") {

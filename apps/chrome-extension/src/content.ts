@@ -22,7 +22,7 @@ class RefineOverlay {
     this.root.innerHTML = `<style>
       *{box-sizing:border-box} :host{font:14px/1.45 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17241f}
       :host{--forest:#12664d;--ink:#1d3028;--muted:#77867e;--line:#e5ece6;--mist:#f6f9f5}
-      .fab{height:38px;display:flex;align-items:center;gap:8px;padding:0 13px;border:1px solid #d8e7dc;border-radius:13px;background:#fff;color:var(--forest);font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 8px 26px #17241f24;transition:transform .18s,box-shadow .18s}.fab:hover{transform:translateY(-2px);box-shadow:0 12px 30px #17241f30}
+      .fab{width:38px;height:38px;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid #d8e7dc;border-radius:13px;background:#fff;color:var(--forest);font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 8px 26px #17241f24;transition:transform .18s,box-shadow .18s}.fab:hover{transform:translateY(-2px);box-shadow:0 12px 30px #17241f30}
       .fab span{width:22px;height:22px;border-radius:8px;background:#eaf4ec;display:grid;place-items:center;font-size:14px}
       .card{width:368px;max-height:min(580px,82vh);overflow:auto;background:#fff;border:1px solid #e2eae3;border-radius:20px;box-shadow:0 22px 72px #12231b38;animation:arrive .18s ease-out}
       @keyframes arrive{from{opacity:0;transform:translateY(5px) scale(.985)}to{opacity:1;transform:none}}
@@ -95,7 +95,7 @@ class RefineOverlay {
     this.host.style.left = `${Math.max(8, Math.min(innerWidth - 368, rect.right - 34))}px`;
     const below = rect.bottom + 8;
     this.host.style.top = `${below < innerHeight - 360 ? below : Math.max(8, rect.top - 360)}px`;
-    this.render(`<button class="fab" title="Refine selected text"><span>✦</span> Refine</button>`);
+    this.render(`<button class="fab" title="Refine selected text" aria-label="Refine selected text"><span aria-hidden="true">✦</span></button>`);
   }
 
   private scheduleSelection() {

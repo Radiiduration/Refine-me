@@ -30,6 +30,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     chrome.runtime.openOptionsPage();
     return;
   }
+  if (message.type === "SYNC_CONTENT_SCRIPT") {
+    syncSelectionContentScript().then(() => sendResponse({ success: true })).catch(() => sendResponse({ success: false }));
+    return true;
+  }
   const endpoints: Record<string, [string, string]> = {
     HEALTH_CHECK: ["/health", "GET"],
     GET_TONES: ["/tones", "GET"],
@@ -81,7 +85,26 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({ id: "refine-selection", title: "Refine selected text", contexts: ["selection"] });
   });
+  void syncSelectionContentScript();
 });
+
+chrome.runtime.onStartup.addListener(() => { void syncSelectionContentScript(); });
+
+async function syncSelectionContentScript() {
+  const id = "refine-selection-bubble";
+  const granted = await chrome.permissions.contains({ origins: ["http://*/*", "https://*/*"] });
+  const registered = await chrome.scripting.getRegisteredContentScripts({ ids: [id] });
+  if (registered.length) await chrome.scripting.unregisterContentScripts({ ids: [id] });
+  if (granted) {
+    await chrome.scripting.registerContentScripts([{
+      id,
+      matches: ["http://*/*", "https://*/*"],
+      js: ["content.js"],
+      runAt: "document_idle",
+      persistAcrossSessions: true,
+    }]);
+  }
+}
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "refine-selection" && tab?.id) {

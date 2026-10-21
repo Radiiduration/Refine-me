@@ -57,15 +57,19 @@ export default function App() {
 
   useEffect(() => {
     if (!IS_DESKTOP) return;
-    let unlisten: (() => void) | undefined;
+    const cleanups: Array<() => void> = [];
     void listen<string>('refine-selection', event => {
       setText(event.payload);
       setRewrittenText('');
       setError('');
       setNotice('Selected text captured. Choose a tone, then refine.');
       setState('INPUT');
-    }).then(dispose => { unlisten = dispose; });
-    return () => unlisten?.();
+    }).then(dispose => cleanups.push(dispose));
+    void listen<string>('refine-selection-status', event => setNotice(event.payload))
+      .then(dispose => cleanups.push(dispose));
+    void listen<string>('refine-selection-error', event => setError(event.payload))
+      .then(dispose => cleanups.push(dispose));
+    return () => cleanups.forEach(dispose => dispose());
   }, []);
 
   const captureClipboard = async () => {
@@ -176,7 +180,7 @@ export default function App() {
         <div className="sidebar-note">
           <span className="note-icon"><Lock size={16} /></span>
           <strong>Your words stay yours.</strong>
-          <p>Refine runs on your own local model. No account, no cloud history.</p>
+          <p>Refine runs on your own local model. Select text anywhere, then press Control+R.</p>
           <button onClick={() => setShowPrivacy(true)}>How privacy works <ChevronDown size={13} /></button>
         </div>
         <div className="sidebar-foot"><span className="mini-mark"><Sparkles size={13} /></span> Made for thoughtful writing <span className="version">0.1</span></div>
