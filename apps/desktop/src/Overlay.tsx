@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrent, LogicalSize } from '@tauri-apps/api/window';
+import './overlay.css';
 
 const API_URL = 'http://localhost:8000';
 const TONES = [['friendly', 'Friendly'], ['formal', 'Formal'], ['concise', 'Concise']] as const;
@@ -78,26 +79,17 @@ export default function RefineOverlay() {
 
   return <div className={`native-refine ${expanded ? 'expanded' : ''}`}>
     {!expanded ? <button className="native-fab" onClick={() => void expand()} aria-label="Open Refine" title="Refine selected text">✦</button> : <>
-      <header><div><b>Refine</b><small>Selected text · local model</small></div><button className="native-close" onClick={() => void hide()} aria-label="Close">×</button></header>
+      <header className="native-header"><div><b>Refine</b><small>Selected text · local model</small></div><button className="native-close" onClick={() => void hide()} aria-label="Close">×</button></header>
       <div className="native-body">
-        <div className="native-source">{draft}</div>
+        <div className={`native-source ${draft ? '' : 'native-placeholder'}`}>{draft || 'Select text or type a draft in the app you are using.'}</div>
         <div className="native-tones" aria-label="Choose a tone">{TONES.map(([key, label]) => <button key={key} className={tone === key ? 'selected' : ''} onClick={() => setTone(key)}>{label}</button>)}</div>
         {output && <div className="native-output">{output}</div>}
         {error && <div className="native-message">{error}</div>}
       </div>
-      <footer>
+      <footer className="native-footer">
         {output && <button className="native-secondary" onClick={() => void copy()}>Copy</button>}
-        <button className="native-primary" disabled={busy} onClick={() => void refine()}>{busy ? 'Refining…' : output ? 'Try again' : 'Refine'}</button>
+        <button className="native-primary" disabled={busy || !draft.trim()} onClick={() => void refine()}>{busy ? 'Refining…' : output ? 'Try again' : 'Refine'}</button>
       </footer>
     </>}
-    <style>{`
-      *{box-sizing:border-box}html,body,#root{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d3028}
-      .native-refine{width:58px;height:58px;padding:7px;background:transparent}.native-fab{width:44px;height:44px;border:1px solid #d8e7dc;border-radius:15px;background:#fff;color:#12664d;font-size:22px;box-shadow:0 8px 26px #17241f30;cursor:pointer;transition:transform .15s}.native-fab:hover{transform:scale(1.06)}
-      .native-refine.expanded{width:352px;height:330px;padding:0;background:#fff;border:1px solid #dfe8e1;border-radius:18px;box-shadow:0 20px 65px #17241f38;overflow:hidden}
-      header{height:58px;padding:0 17px;border-bottom:1px solid #edf2ef;display:flex;align-items:center;justify-content:space-between}header b{display:block;font-size:15px}header small{display:block;color:#7b8981;font-size:11px;margin-top:2px}.native-close{width:28px;height:28px;border:0;border-radius:8px;background:#f5f8f5;color:#738179;font-size:20px;cursor:pointer}
-      .native-body{padding:14px 16px;height:218px;overflow:auto}.native-source,.native-output{white-space:pre-wrap;overflow-wrap:anywhere;border-radius:11px;padding:10px 12px;max-height:86px;overflow:auto;font-size:13px;line-height:1.5}.native-source{background:#f6f9f5;border:1px solid #e8eee8;color:#526158}.native-output{margin-top:10px;background:#f3f8f3;border:1px solid #deeadf;color:#244b37}
-      .native-tones{display:flex;gap:6px;margin:11px 0}.native-tones button{padding:6px 10px;border:1px solid #e1e9e3;border-radius:999px;background:#fff;color:#4f6257;font-size:11px;cursor:pointer}.native-tones button.selected{background:#e8f3e8;border-color:#b8d5b8;color:#245b3b}.native-message{font-size:11px;color:#64736a;margin-top:7px}
-      footer{height:53px;padding:8px 14px;border-top:1px solid #edf2ef;display:flex;justify-content:flex-end;gap:8px}.native-primary,.native-secondary{padding:8px 13px;border-radius:10px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}.native-primary{background:#12664d;border:1px solid #12664d;color:white}.native-primary:disabled{opacity:.65}.native-secondary{background:white;border:1px solid #dfe8e1;color:#486052}
-    `}</style>
   </div>;
 }

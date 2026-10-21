@@ -3,7 +3,7 @@
 use arboard::Clipboard;
 use std::{process::Command, thread, time::Duration};
 use tauri::{
-    CustomMenuItem, GlobalShortcutManager, LogicalPosition, Manager, PhysicalSize, SystemTray,
+    CustomMenuItem, GlobalShortcutManager, LogicalPosition, LogicalSize, Manager, SystemTray,
     SystemTrayEvent, SystemTrayMenu,
 };
 
@@ -50,47 +50,172 @@ fn paste_text(text: String) -> Result<(), String> {
 
 #[cfg(target_os = "macos")]
 fn selected_text_from_frontmost_app() -> Result<Option<String>, String> {
-    let mut clipboard =
-        Clipboard::new().map_err(|_| "Could not access the clipboard.".to_string())?;
-    let previous = clipboard.get_text().ok();
-    let marker = format!("refine-selection-{}", std::process::id());
-    clipboard
-        .set_text(marker.clone())
-        .map_err(|_| "Could not prepare the selection clipboard.".to_string())?;
-    let output = Command::new("osascript")
-        .args([
-            "-e",
-            "tell application \"System Events\" to keystroke \"c\" using {command down}",
-        ])
-        .output();
-    let restore = |clipboard: &mut Clipboard, previous: &Option<String>| {
-        if let Some(old) = previous {
-            let _ = clipboard.set_text(old.clone());
-        }
-    };
-    let output = match output {
-        Ok(output) => output,
-        Err(_) => {
-            restore(&mut clipboard, &previous);
-            return Err("Refine could not read the selected text. Allow Refine under System Settings → Privacy & Security → Accessibility.".into());
-        }
-    };
-    if !output.status.success() {
-        restore(&mut clipboard, &previous);
-        return Err("macOS blocked selection capture. Allow Refine under System Settings → Privacy & Security → Accessibility.".into());
+    if !accessibility_trusted() {
+        return Err("Enable the Refine app you opened under System Settings → Privacy & Security → Accessibility, then quit and reopen it.".into());
     }
-    thread::sleep(Duration::from_millis(140));
-    let selected = clipboard
-        .get_text()
-        .ok()
-        .filter(|value| !value.trim().is_empty() && value != &marker);
-    restore(&mut clipboard, &previous);
-    Ok(selected)
+    Ok(focused_editing_context()
+        .and_then(|(_, _, selected)| (!selected.trim().is_empty()).then_some(selected)))
 }
 
 #[cfg(not(target_os = "macos"))]
 fn selected_text_from_frontmost_app() -> Result<Option<String>, String> {
     Ok(None)
+}
+
+#[cfg(target_os = "macos")]
+fn accessibility_trusted() -> bool {
+    #[link(name = "ApplicationServices", kind = "framework")]
+    extern "C" {
+        fn AXIsProcessTrusted() -> u8;
+    }
+    unsafe { AXIsProcessTrusted() != 0 }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn accessibility_trusted() -> bool {
+    false
+}
+
+#[cfg(target_os = "macos")]
+fn focused_editing_context() -> Option<(i32, String, String)> {
+    use std::ffi::{c_char, c_void, CStr, CString};
+
+    const UTF8_ENCODING: u32 = 0x0800_0100;
+    type CfRef = *const c_void;
+
+    #[link(name = "ApplicationServices", kind = "framework")]
+    extern "C" {
+        fn AXUIElementCreateSystemWide() -> CfRef;
+        fn AXUIElementCopyAttributeValue(
+            element: CfRef,
+            attribute: CfRef,
+            value: *mut CfRef,
+        ) -> i32;
+        fn AXUIElementGetPid(element: CfRef, pid: *mut i32) -> i32;
+    }
+    #[link(name = "CoreFoundation", kind = "framework")]
+    extern "C" {
+        fn CFStringCreateWithCString(
+            allocator: CfRef,
+            value: *const c_char,
+            encoding: u32,
+        ) -> CfRef;
+        fn CFStringGetCString(value: CfRef, buffer: *mut c_char, size: isize, encoding: u32) -> u8;
+        fn CFRelease(value: CfRef);
+    }
+
+    unsafe fn attribute_string(element: CfRef, name: &str) -> Option<String> {
+        let name = CString::new(name).ok()?;
+        let attribute = CFStringCreateWithCString(std::ptr::null(), name.as_ptr(), UTF8_ENCODING);
+        if attribute.is_null() {
+            return None;
+        }
+        let mut value = std::ptr::null();
+        let result = AXUIElementCopyAttributeValue(element, attribute, &mut value);
+        CFRelease(attribute);
+        if result != 0 || value.is_null() {
+            return None;
+        }
+        let mut buffer = [0 as c_char; 8192];
+        let converted = CFStringGetCString(
+            value,
+            buffer.as_mut_ptr(),
+            buffer.len() as isize,
+            UTF8_ENCODING,
+        ) != 0;
+        CFRelease(value);
+        if converted {
+            Some(
+                CStr::from_ptr(buffer.as_ptr())
+                    .to_string_lossy()
+                    .into_owned(),
+            )
+        } else {
+            None
+        }
+    }
+
+    unsafe {
+        let system = AXUIElementCreateSystemWide();
+        if system.is_null() {
+            return None;
+        }
+        let mut focused = std::ptr::null();
+        let attribute_name = CString::new("AXFocusedUIElement").ok()?;
+        let focused_attribute =
+            CFStringCreateWithCString(std::ptr::null(), attribute_name.as_ptr(), UTF8_ENCODING);
+        let result = AXUIElementCopyAttributeValue(system, focused_attribute, &mut focused);
+        CFRelease(focused_attribute);
+        CFRelease(system);
+        if result != 0 || focused.is_null() {
+            return None;
+        }
+        let mut pid = 0;
+        let pid_ok = AXUIElementGetPid(focused, &mut pid) == 0;
+        let role = attribute_string(focused, "AXRole").unwrap_or_default();
+        let selected = attribute_string(focused, "AXSelectedText").unwrap_or_default();
+        CFRelease(focused);
+        pid_ok.then_some((pid, role, selected))
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn focused_editing_context() -> Option<(i32, String, String)> {
+    None
+}
+
+fn start_text_field_watcher(app: tauri::AppHandle) {
+    #[cfg(target_os = "macos")]
+    thread::spawn(move || {
+        let mut was_active = false;
+        let mut previous_text = String::new();
+        let mut previous_pid = 0;
+        loop {
+            thread::sleep(Duration::from_millis(350));
+            if !accessibility_trusted() {
+                continue;
+            }
+            let context = focused_editing_context();
+            let own_pid = std::process::id() as i32;
+            let (is_active, pid, selected) = match context {
+                Some((pid, role, selected)) if pid != own_pid => {
+                    let editing_role = matches!(
+                        role.as_str(),
+                        "AXTextField"
+                            | "AXTextArea"
+                            | "AXTextView"
+                            | "AXSearchField"
+                            | "AXComboBox"
+                    );
+                    (editing_role || !selected.trim().is_empty(), pid, selected)
+                }
+                Some((pid, _, _)) if pid == own_pid => continue,
+                _ => (false, 0, String::new()),
+            };
+
+            if is_active {
+                if !was_active || pid != previous_pid || selected != previous_text {
+                    if let Some(overlay) = app.get_window("overlay") {
+                        if let Some((x, y)) = pointer_position() {
+                            let _ = overlay.set_position(LogicalPosition::new(x as f64, y as f64));
+                        }
+                        let _ = overlay.set_size(LogicalSize::new(58.0, 58.0));
+                        let _ = overlay.show();
+                        let _ = overlay.emit("refine-selection", selected.clone());
+                    }
+                }
+                previous_text = selected;
+                previous_pid = pid;
+            } else if was_active {
+                if let Some(overlay) = app.get_window("overlay") {
+                    let _ = overlay.hide();
+                }
+                previous_text.clear();
+                previous_pid = 0;
+            }
+            was_active = is_active;
+        }
+    });
 }
 
 #[cfg(target_os = "macos")]
@@ -155,6 +280,7 @@ fn main() {
         })
         .setup(|app| {
             let handle = app.handle();
+            start_text_field_watcher(handle.clone());
             let mut shortcuts = app.global_shortcut_manager();
             shortcuts.register("Control+R", move || {
                 let text = match selected_text_from_frontmost_app() {
@@ -162,7 +288,7 @@ fn main() {
                     Ok(_) => return,
                     Err(message) => {
                         if let Some(window) = handle.get_window("overlay") {
-                            let _ = window.set_size(PhysicalSize::new(352, 330));
+                            let _ = window.set_size(LogicalSize::new(352.0, 330.0));
                             let _ = window.show();
                             let _ = window.emit("refine-selection-error", message);
                         }
@@ -173,7 +299,7 @@ fn main() {
                     if let Some((x, y)) = pointer_position() {
                         let _ = overlay.set_position(LogicalPosition::new(x as f64, y as f64));
                     }
-                    let _ = overlay.set_size(PhysicalSize::new(58, 58));
+                    let _ = overlay.set_size(LogicalSize::new(58.0, 58.0));
                     let _ = overlay.show();
                     let _ = overlay.emit("refine-selection", text);
                 }

@@ -1,0 +1,133 @@
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+:root { background: transparent; }
+
+body {
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1d3028;
+}
+
+.native-refine {
+  width: 58px;
+  height: 58px;
+  padding: 7px;
+  background: transparent;
+}
+
+.native-fab {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #d8e7dc;
+  border-radius: 15px;
+  background: #fff;
+  color: #12664d;
+  font-size: 22px;
+  box-shadow: 0 8px 26px #17241f30;
+  cursor: pointer;
+  transition: transform .15s;
+}
+
+.native-fab:hover { transform: scale(1.06); }
+
+.native-refine.expanded {
+  display: flex;
+  width: 352px;
+  height: 330px;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #dfe8e1;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 20px 65px #17241f38;
+}
+
+.native-header {
+  display: flex;
+  height: 58px;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 17px;
+  border-bottom: 1px solid #edf2ef;
+}
+
+.native-header b { display: block; font-size: 15px; }
+.native-header small { display: block; margin-top: 2px; color: #7b8981; font-size: 11px; }
+
+.native-close {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: #f5f8f5;
+  color: #738179;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.native-body { flex: 1; min-height: 0; overflow: auto; padding: 14px 16px; }
+
+.native-source,
+.native-output {
+  overflow: auto;
+  max-height: 86px;
+  padding: 10px 12px;
+  overflow-wrap: anywhere;
+  border-radius: 11px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.native-source { border: 1px solid #e8eee8; background: #f6f9f5; color: #526158; }
+.native-placeholder { color: #94a097; }
+.native-output { margin-top: 10px; border: 1px solid #deeadf; background: #f3f8f3; color: #244b37; }
+.native-tones { display: flex; flex-wrap: wrap; gap: 6px; margin: 11px 0; }
+
+.native-tones button {
+  padding: 6px 10px;
+  border: 1px solid #e1e9e3;
+  border-radius: 999px;
+  background: #fff;
+  color: #4f6257;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.native-tones button.selected { border-color: #b8d5b8; background: #e8f3e8; color: #245b3b; }
+.native-message { margin-top: 7px; color: #64736a; font-size: 11px; }
+
+.native-footer {
+  display: flex;
+  height: 53px;
+  min-height: 53px;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid #edf2ef;
+}
+
+.native-primary,
+.native-secondary {
+  padding: 8px 13px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.native-primary { border: 1px solid #12664d; background: #12664d; color: white; }
+.native-primary:disabled { opacity: .65; }
+.native-secondary { border: 1px solid #dfe8e1; background: white; color: #486052; }
