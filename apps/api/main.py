@@ -134,6 +134,24 @@ async def protect_lan_clients(request, call_next):
     if remote_client and (client_ip is None or client_ip.is_global or client_ip.is_link_local):
         return JSONResponse({"detail": "Remote API access is limited to private network clients."}, status_code=403)
 
+    # Rate limit before token validation so failed token guesses are bounded too.
+    # Only the model-backed routes are counted; /health is a lightweight probe.
+    if request.url.path in {"/rewrite", "/clarify"} and request.method == "POST":
+        now = time.monotonic()
+        key = client_host or "unknown"
+        if key not in _request_windows and len(_request_windows) >= 2048:
+            _request_windows.pop(next(iter(_request_windows)))
+        recent = [stamp for stamp in _request_windows[key] if now - stamp < RATE_WINDOW_SECONDS]
+        if len(recent) >= RATE_LIMIT:
+            retry_after = max(1, int(RATE_WINDOW_SECONDS - (now - recent[0]) + 0.999))
+            return JSONResponse(
+                {"detail": "Too many requests. Try again shortly."},
+                status_code=429,
+                headers={"Retry-After": str(retry_after)},
+            )
+        recent.append(now)
+        _request_windows[key] = recent
+
     origin = request.headers.get("origin", "").rstrip("/")
     configured_web_client = origin in _configured_origins
     if (remote_client or configured_web_client) and request.method != "OPTIONS":
@@ -155,22 +173,6 @@ async def protect_lan_clients(request, call_next):
         return JSONResponse({"detail": "Invalid Content-Length."}, status_code=400)
     if content_length > MAX_BODY_BYTES:
         return JSONResponse({"detail": "Request body is too large."}, status_code=413)
-
-    if request.url.path in {"/rewrite", "/clarify"} and request.method == "POST":
-        now = time.monotonic()
-        key = client_host or "unknown"
-        if key not in _request_windows and len(_request_windows) >= 2048:
-            _request_windows.pop(next(iter(_request_windows)))
-        recent = [stamp for stamp in _request_windows[key] if now - stamp < RATE_WINDOW_SECONDS]
-        if len(recent) >= RATE_LIMIT:
-            retry_after = max(1, int(RATE_WINDOW_SECONDS - (now - recent[0]) + 0.999))
-            return JSONResponse(
-                {"detail": "Too many requests. Try again shortly."},
-                status_code=429,
-                headers={"Retry-After": str(retry_after)},
-            )
-        recent.append(now)
-        _request_windows[key] = recent
 
     response = await call_next(request)
     # Chrome can require this opt-in when an HTTPS Vercel site calls a loopback API.

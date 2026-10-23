@@ -7,6 +7,8 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
@@ -14,10 +16,14 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 class SettingsActivity : Activity() {
     private val prefs by lazy { getSharedPreferences("refine", Context.MODE_PRIVATE) }
     private var message: TextView? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,7 +82,11 @@ class SettingsActivity : Activity() {
 
         title(page, "Connect your computer", "Your draft is rewritten by the model on your computer over an encrypted HTTPS connection.")
 
-        val apiUrl = field("https://refine.local:8001", prefs.getString("api_url", "") ?: "")
+        val storedAddress = prefs.getString("api_url", "").orEmpty()
+        val emulatorAddress = if (storedAddress == "http://10.0.2.2:8001") {
+            "https://localhost:8001".also { prefs.edit().putString("api_url", it).commit() }
+        } else storedAddress
+        val apiUrl = field("https://localhost:8001", emulatorAddress)
         val token = field("Paste the token from your computer", TokenVault.read(this), secret = true)
         val connectionCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -94,11 +104,40 @@ class SettingsActivity : Activity() {
             setTextColor(0xFF748078.toInt())
             setPadding(dp(3), dp(9), dp(3), dp(4))
         })
-        page.addView(action("Save private connection", primary = true) {
-            prefs.edit().putString("api_url", apiUrl.text.toString().trim().trimEnd('/')).apply()
-            TokenVault.write(this, token.text.toString().trim())
-            showStatus("Connection saved on this device.")
-        }, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(12); bottomMargin = dp(22) })
+        var saveConnectionButton: Button? = null
+        val saveConnection = action("Save private connection", primary = true) {
+            val normalizedUrl = PrivateApiEndpoint.normalize(apiUrl.text.toString())
+            val deviceToken = token.text.toString().trim()
+            if (normalizedUrl == null) {
+                showStatus("Use a private HTTPS address, such as https://your-mac.local:8001.")
+                return@action
+            }
+            if (deviceToken.length < 32) {
+                showStatus("Enter the full device token from Refine on your computer.")
+                return@action
+            }
+
+            val saved = runCatching {
+                TokenVault.write(this, deviceToken) &&
+                    prefs.edit().putString("api_url", normalizedUrl).commit()
+            }.getOrDefault(false)
+            if (!saved) {
+                showStatus("Could not save the connection. Check device storage and try again.")
+                return@action
+            }
+
+            showStatus("Connection saved. Checking the local model…")
+            saveConnectionButton?.isEnabled = false
+            Thread {
+                val result = checkConnection(normalizedUrl, deviceToken)
+                mainHandler.post {
+                    saveConnectionButton?.isEnabled = true
+                    showStatus(result)
+                }
+            }.start()
+        }
+        saveConnectionButton = saveConnection
+        page.addView(saveConnection, LinearLayout.LayoutParams(-1, dp(50)).apply { topMargin = dp(12); bottomMargin = dp(22) })
 
         title(page, "Turn on the Refine keyboard", "Android will ask you to enable it, then choose it whenever you want to write.")
         val enableRow = stepCard("1", "Enable Refine", "Allow the keyboard in Android settings")
@@ -132,6 +171,13 @@ class SettingsActivity : Activity() {
         })
 
         setContentView(ScrollView(this).apply { isFillViewport = true; addView(page) })
+        val savedAddress = prefs.getString("api_url", "").orEmpty()
+        when {
+            savedAddress.isNotBlank() && PrivateApiEndpoint.normalize(savedAddress) == null ->
+                showStatus("Your saved address is not private HTTPS. Update it and save again.")
+            TokenVault.read(this).isBlank() ->
+                showStatus("Add the device token from Refine on your computer, then save.")
+        }
     }
 
     private fun title(parent: LinearLayout, heading: String, subtitle: String) {
@@ -203,6 +249,34 @@ class SettingsActivity : Activity() {
     }
 
     private fun showStatus(text: String) { message?.text = text }
+
+    private fun checkConnection(base: String, token: String): String {
+        val connection = runCatching {
+            (URL("$base/health").openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                instanceFollowRedirects = false
+                connectTimeout = 5_000
+                readTimeout = 5_000
+                setRequestProperty("X-Refine-Token", token)
+            }
+        }.getOrNull() ?: return "Saved, but the private API address is invalid."
+        return try {
+            val code = connection.responseCode
+            val body = (if (code in 200..299) connection.inputStream else connection.errorStream)
+                ?.bufferedReader()?.use { it.readText() }.orEmpty()
+            when {
+                code == 401 -> "Saved, but the device token was rejected. Check it on your computer."
+                code in 200..299 && JSONObject(body).optString("status") == "ok" ->
+                    "Saved and connected to the local model."
+                code == 503 -> "Saved, but the local model server is offline. Start it on your computer."
+                else -> "Saved, but Refine could not connect. Check the HTTPS address and computer API."
+            }
+        } catch (_: Exception) {
+            "Saved, but Refine could not reach the computer. Check HTTPS, Wi-Fi, and the API server."
+        } finally {
+            connection.disconnect()
+        }
+    }
 
     private fun rounded(color: Int, radius: Int, stroke: Int? = null) = GradientDrawable().apply {
         setColor(color)

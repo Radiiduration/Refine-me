@@ -182,7 +182,7 @@ class RefineImeService : InputMethodService() {
         val prefs = getSharedPreferences("refine", Context.MODE_PRIVATE)
         val base = prefs.getString("api_url", "").orEmpty().trimEnd('/')
         val token = TokenVault.read(this)
-        if (!privateEndpoint(base) || token.isBlank()) {
+        if (PrivateApiEndpoint.normalize(base) == null || token.isBlank()) {
             setStatus("Set a private API URL and token in Refine")
             return
         }
@@ -261,22 +261,6 @@ class RefineImeService : InputMethodService() {
         } finally {
             connection.disconnect()
         }
-    }
-
-    private fun privateEndpoint(base: String): Boolean = runCatching {
-        val url = URL(base)
-        if (url.protocol != "https") return false
-        val host = url.host.lowercase()
-        if (url.userInfo != null) return false
-        host == "localhost" || host.endsWith(".local") || privateIPv4(host)
-    }.getOrDefault(false)
-
-    private fun privateIPv4(host: String): Boolean {
-        val segments = host.split('.')
-        val octets = segments.mapNotNull { it.toIntOrNull()?.takeIf { n -> n in 0..255 } }
-        if (segments.size != 4 || octets.size != 4) return false
-        return octets[0] == 10 || octets[0] == 192 && octets[1] == 168 ||
-            octets[0] == 172 && octets[1] in 16..31
     }
 
     private fun showGoalMenu(anchor: View) {

@@ -32,18 +32,17 @@ internal object TokenVault {
         return legacy
     }
 
-    fun write(context: Context, token: String) {
+    fun write(context: Context, token: String): Boolean {
         if (token.isEmpty()) {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .remove(ENCRYPTED).remove(IV).remove("token").apply()
-            return
+            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .remove(ENCRYPTED).remove(IV).remove("token").commit()
         }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, key())
         val encrypted = Base64.encodeToString(cipher.doFinal(token.toByteArray(Charsets.UTF_8)), Base64.NO_WRAP)
         val iv = Base64.encodeToString(cipher.iv, Base64.NO_WRAP)
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(ENCRYPTED, encrypted).putString(IV, iv).remove("token").apply()
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(ENCRYPTED, encrypted).putString(IV, iv).remove("token").commit()
     }
 
     private fun key(): SecretKey {
