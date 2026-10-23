@@ -96,6 +96,7 @@ For a Vercel-hosted web editor, set `REFINE_ALLOWED_ORIGINS` to the exact HTTPS 
 - Drafts go to the configured Refine API; the model runtime is local by default.
 - The model server and normal API bind to loopback. LAN mode requires HTTPS and a device token.
 - CORS accepts configured HTTPS origins and the local development clients.
+- API responses use `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`; HTTPS responses also receive HSTS.
 - `/rewrite` and `/clarify` are limited to 10 requests per minute per client address in one API process. Request bodies are capped at 256 KiB, generation concurrency at two, and text fields at 20,000 characters.
 - The web editor accepts loopback HTTP(S) or remote HTTPS only. Remote connections require a 32-character token, held in memory rather than browser storage.
 - iOS uses Keychain; Android uses Android Keystore. The Chrome extension only connects to a loopback API.

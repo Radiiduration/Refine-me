@@ -178,8 +178,6 @@ async def protect_lan_clients(request, call_next):
     # Chrome can require this opt-in when an HTTPS Vercel site calls a loopback API.
     if request.headers.get("access-control-request-private-network", "").lower() == "true":
         response.headers["Access-Control-Allow-Private-Network"] = "true"
-    if request.url.scheme == "https":
-        response.headers["Strict-Transport-Security"] = "max-age=31536000"
     return response
 
 
@@ -215,6 +213,44 @@ class PrivateNetworkPreflightMiddleware:
 
 
 app.add_middleware(PrivateNetworkPreflightMiddleware)
+
+
+class SecurityResponseHeadersMiddleware:
+    """Keep private API responses out of caches and disable content sniffing."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def add_security_headers(message):
+            if message["type"] == "http.response.start":
+                headers = [
+                    (name, value) for name, value in message.get("headers", [])
+                    if name.lower() not in {
+                        b"cache-control",
+                        b"x-content-type-options",
+                        b"strict-transport-security",
+                    }
+                ]
+                headers.extend([
+                    (b"cache-control", b"no-store"),
+                    (b"x-content-type-options", b"nosniff"),
+                ])
+                if scope.get("scheme") == "https":
+                    headers.append((b"strict-transport-security", b"max-age=31536000"))
+                message["headers"] = headers
+            await send(message)
+
+        await self.app(scope, receive, add_security_headers)
+
+
+# Keep this outermost so auth, CORS, and request-size error responses receive
+# the same non-storage and content-type protections as successful responses.
+app.add_middleware(SecurityResponseHeadersMiddleware)
 
 
 # ---------------------------------------------------------------------------
