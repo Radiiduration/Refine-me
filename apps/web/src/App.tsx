@@ -71,6 +71,7 @@ function InstallGuide({ onConfigure, onOpenStudio }: { onConfigure: () => void; 
           <div className="install-kicker"><span /> YOUR MODEL. YOUR WORDS.</div>
           <h1>Private writing,<br /><em>set up your way.</em></h1>
           <p>Run the model on your Mac, then connect Refine on the devices where you write. Follow the steps for your setup below.</p>
+          <div className="install-local-first"><Lock size={15} /><b>LOCAL FIRST</b><span>Your draft goes to the model you run on your own device.</span></div>
           <div className="install-hero-actions"><button className="lime-button" onClick={() => document.getElementById('install-steps')?.scrollIntoView({ behavior: 'smooth' })}>Start setup <ArrowRight size={16} /></button><button className="outline-button" onClick={onOpenStudio}>Open writing studio</button></div>
           <div className="install-facts"><span>LOCAL MODEL</span><i /> <span>NO ACCOUNT</span><i /> <span>YOUR API</span></div>
         </div>
@@ -145,7 +146,7 @@ export default function App() {
   const [currentTone, setCurrentTone] = useState('friendly');
   const [modelOnline, setModelOnline] = useState<boolean | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [activeView, setActiveView] = useState<'studio' | 'install'>('studio');
+  const [activeView, setActiveView] = useState<'studio' | 'install'>('install');
   const [apiUrl, setApiUrl] = useState(initialApiUrl);
   const [apiUrlDraft, setApiUrlDraft] = useState(initialApiUrl);
   const [apiToken, setApiToken] = useState('');

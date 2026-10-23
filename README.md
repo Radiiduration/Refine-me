@@ -1,37 +1,42 @@
 # Refine
 
-Refine is a privacy-first writing assistant for your browser, web editor, and desktop. It clarifies missing context, offers five tones, and streams rewrites from a model you run locally. It does not need an account, cloud API, analytics, or telemetry.
+Refine is a local-first writing assistant for the web editor, Chrome, iPhone, Android, and macOS desktop. It asks for missing context, offers five writing tones, and streams a rewrite from a model you run on your own computer. You review the result before replacing any text.
 
-## Laptop setup (macOS, 16 GB RAM)
+Refine has no account, telemetry, cloud history, or third-party model API. Drafts are sent to the Refine API and the model endpoint you configure.
 
-The default model is Qwen3 4B in Q4_K_M quantization. The server binds to loopback, uses one request slot, and limits context to 4,096 tokens to leave memory for the rest of the system.
+## First run
 
-Install [llama.cpp](https://github.com/ggml-org/llama.cpp) (Homebrew: `brew install llama.cpp`) and Python dependencies:
+The website opens on the installation guide. Start with the **Mac** tab to run the model and local API, then choose the client you want to install. The **LOCAL FIRST** callout describes where draft text goes. Open the writing studio when setup is ready.
+
+### Requirements
+
+- macOS computer; 16 GB memory recommended for the default model
+- Git, Python 3, Node.js, and llama.cpp
+- Approximately 2.5 GB free for Qwen3 4B Q4_K_M weights, plus runtime memory and build space
+
+### Run the local model and API
+
+From the repository root, install llama.cpp and the Python dependencies:
 
 ```sh
+brew install llama.cpp
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -r apps/api/requirements.lock
 ```
 
-Run these in separate terminals from the repository root:
+Start these in separate terminals:
 
 ```sh
-make model-server  # downloads the GGUF on first run; listens only on 127.0.0.1:8080
-make api           # local API at http://127.0.0.1:8000
+make model-server  # downloads Qwen3 4B Q4_K_M on first run; listens on 127.0.0.1:8080
+make api           # local Refine API at 127.0.0.1:8000
 ```
 
-## iPhone keyboard
+The model server binds to loopback. The normal API command also binds to loopback, so other devices cannot connect to it.
 
-The iOS keyboard runs as an app extension and uses the same local model on your Mac. Setup, HTTPS LAN token protection, Xcode signing, and keyboard installation steps are in [apps/ios/README.md](apps/ios/README.md). The default `make api` stays loopback-only; use `make mobile-api` only with a trusted TLS certificate and a long random token. Do not expose the development API directly to the public internet.
+## Install a client
 
-## Android keyboard
-
-Build the installable debug APK with `make android-build`. Open Refine on the phone, save the Mac's HTTPS API address and `REFINE_MOBILE_TOKEN`, then enable **Refine Keyboard** under Android's keyboard/input-method settings and select it from the keyboard switcher. Android uses a system keyboard (IME), not a floating bubble, and does not need Background App Refresh. See [apps/android/README.md](apps/android/README.md) for installation and LAN setup.
-
-The model server uses roughly 2.5 GB for the quantized weights; actual memory varies with context and runtime. Change the model and API settings in `apps/api/.env` if needed. `apps/api/llm.py` is the only module that interprets those backend settings.
-
-## Web editor
+### Web editor
 
 ```sh
 cd apps/web
@@ -39,13 +44,9 @@ npm ci
 npm run dev
 ```
 
-Open the local address printed by Vite. The editor talks to the local Refine API at port 8000. You can paste text, refine it, choose a tone, regenerate, and copy the result.
+Open the address Vite prints. The local editor uses the Refine API on port 8000. The installation guide appears first; choose **Open writing studio** when ready.
 
-### Deploy the web editor to Vercel
-
-Import this repository in Vercel and set the project root to `apps/web`; the included `apps/web/vercel.json` configures the Vite build. The deployed editor is static and does not host an AI model. To use it with a self-hosted API, configure a trusted HTTPS endpoint, set `REFINE_ALLOWED_ORIGINS` to the exact HTTPS Vercel origin, and enter the device token in **Your privacy → Device token**. The token stays in page memory and is cleared when the page closes or reloads. The API requires the token for non-loopback clients and configured web origins, and accepts only configured CORS origins. Do not expose the development API directly to the public internet.
-
-## Chrome extension
+### Chrome extension
 
 ```sh
 cd apps/chrome-extension
@@ -53,9 +54,17 @@ npm ci
 npm run build
 ```
 
-In Chrome, open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `apps/chrome-extension/dist`. Refine uses Chrome's temporary active-tab permission after you invoke its toolbar action, context menu, or shortcut; it does not run a content script across every website in the background. Select text in a browser writing field and invoke Refine to choose a context and tone, then review the rewrite before replacing the selection. The extension also adds a right-click action and `Ctrl+Shift+R` / `Command+Shift+R` shortcut. Its API setting accepts loopback HTTP only.
+In Chrome, visit `chrome://extensions`, turn on Developer mode, choose **Load unpacked**, and select `apps/chrome-extension/dist`. The extension uses Chrome's active-tab permission when you invoke it. Its API setting only accepts a loopback HTTP address.
 
-## Desktop app
+### iPhone keyboard
+
+See [apps/ios/README.md](apps/ios/README.md) for Xcode signing and keyboard setup. The iOS app stores the device token in Keychain. The keyboard connects to the model-running Mac over HTTPS on trusted Wi-Fi. iOS requires **Allow Full Access** for keyboard network access.
+
+### Android keyboard
+
+Run `make android-build`, install the debug APK, and follow [apps/android/README.md](apps/android/README.md). The token is stored with Android Keystore. Android also requires HTTPS for a remote Mac connection.
+
+### macOS desktop app
 
 ```sh
 cd apps/desktop
@@ -63,27 +72,58 @@ npm ci
 npm run tauri dev
 ```
 
-The desktop client uses the same API and prompts. On macOS, **Replace in App** copies the rewrite and pastes it into the previously focused application; macOS may ask you to grant Accessibility permission to the app.
+The Tauri studio and writing popover use the same warm paper, ink, lavender, and coral palette as the web editor. macOS may ask for Accessibility access so Refine can paste a rewrite into the previously focused application.
 
-## Release artifacts
+A macOS Apple Silicon DMG can be produced with `make release`. The desktop app is currently unsigned and not notarized. A Windows desktop installer is not currently provided.
 
-Run `make release` on macOS to run the API tests, build all three clients, and create release ZIPs plus a macOS Apple Silicon DMG in `release/`. The desktop bundle is unsigned and not notarized; those steps require the distributor's Apple Developer credentials. The extension ZIP can be uploaded to the Chrome Web Store by its publisher. The web editor is built as static files and requires the local Refine API and model server.
+## Connect a phone or a hosted website
 
-## API check
+For access from another device, use `make mobile-api` with a trusted TLS certificate and a random token of at least 32 characters:
 
 ```sh
-curl http://127.0.0.1:8000/health
-curl -N http://127.0.0.1:8000/rewrite \
-  -H 'Content-Type: application/json' \
-  -d '{"text":"hey can u send the report","tone":"formal"}'
+export REFINE_MOBILE_TOKEN="$(openssl rand -hex 32)"
+export REFINE_TLS_CERTFILE="/path/to/trusted-cert.pem"
+export REFINE_TLS_KEYFILE="/path/to/private-key.pem"
+make mobile-api
 ```
 
-## Privacy and scope
+This command binds the API to the network so devices on the trusted Wi-Fi can reach it. Do not expose the development API directly to the public internet. Install/trust the certificate on each client, keep the token secret, and use a trusted private network.
 
-Draft text is sent only to the configured local or self-hosted model server through the Refine API. The mobile API requires HTTPS and a device token; it is intended for trusted private networks, not direct public exposure. No draft logging, telemetry, third-party model calls, user accounts, or cloud sync are included. The extension requests active-tab interaction, local storage, context menus, and access to the loopback API.
+For a Vercel-hosted web editor, set `REFINE_ALLOWED_ORIGINS` to the exact HTTPS site origin and configure the same HTTPS API address and device token in **Your privacy**. The Vercel site is a static editor; it does not host the model. The token stays in browser memory and is cleared when the page closes or reloads.
 
-Refine is an independent project and is not affiliated with Grammarly. The implementation follows observed public behavior and the project specification; Grammarly account-only editor behavior was not reverse engineered.
+## Security and privacy
 
-## License
+- Drafts go to the configured Refine API; the model runtime is local by default.
+- The model server and normal API bind to loopback. LAN mode requires HTTPS and a device token.
+- CORS accepts configured HTTPS origins and the local development clients.
+- `/rewrite` and `/clarify` are limited to 10 requests per minute per client address in one API process. Request bodies are capped at 256 KiB, generation concurrency at two, and text fields at 20,000 characters.
+- The web editor accepts loopback HTTP(S) or remote HTTPS only. Remote connections require a 32-character token, held in memory rather than browser storage.
+- iOS uses Keychain; Android uses Android Keystore. The Chrome extension only connects to a loopback API.
+- Refine does not intentionally log submitted drafts. Model failure logs omit exception details that could echo draft content.
 
-MIT. See [LICENSE](LICENSE).
+These controls reduce exposure but cannot guarantee that a device, operating system, local network, certificate, or configured server is completely secure. Keep devices updated, protect the TLS key and device token, and only connect to systems you trust.
+
+## Evaluation
+
+A live preliminary evaluation used the local **Qwen3-4B Q4_K_M** model through llama.cpp on 20 hand-labeled prompts. The clarification decision matched the labels on **11/20 (55%)**: all 11 vague examples were flagged, but all 9 examples labeled clear were also flagged (0/9 specificity). This shows the current clarification behavior over-asks and needs improvement.
+
+All 20 rewrite requests returned non-empty text. Manual review found one unsupported detail (the model added “persistent” to a noise complaint), one unrequested emoji, and several lowercase sentence openings. This is a small preliminary sample, not a comprehensive quality or safety benchmark. Run the API tests with `make test`; run the local evaluation with `make eval` while the model server is running.
+
+## Development checks
+
+```sh
+make test
+make web-build
+make extension-build
+make desktop-build
+make ios-build
+make android-build
+```
+
+`make release` runs the API tests and builds the web, extension, desktop, and macOS release artifacts.
+
+## Licensing
+
+Refine's original source is licensed under MIT; see [LICENSE](LICENSE). Third-party packages and model weights remain under their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The Qwen3 GGUF weights are downloaded separately and are not included in the repository.
+
+Refine is an independent project and is not affiliated with Grammarly. It does not reverse engineer Grammarly account-only behavior.

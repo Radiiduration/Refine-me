@@ -21,7 +21,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Local Refine server") {
+                Section {
                     TextField("https://refine.local:8001", text: $apiURL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -36,8 +36,10 @@ struct SettingsView: View {
                         store?.removeObject(forKey: SharedSettings.token)
                         saved = stored
                     }
+                } header: {
+                    Text("Local-first setup")
                 } footer: {
-                        Text("Use your Mac’s private Wi-Fi address and the same REFINE_MOBILE_TOKEN used to start the API. Refine sends only the selected text to this server, with a goal of making it clear and tactful for work.")
+                    Text("Refine runs your model on your Mac. Use its private Wi-Fi address and the same REFINE_MOBILE_TOKEN used to start the API. Only selected text is sent to that server over HTTPS.")
                 }
 
                 Section("Enable the keyboard") {
@@ -52,6 +54,9 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color(red: 0.969, green: 0.957, blue: 0.933))
+            .tint(Color(red: 0.404, green: 0.322, blue: 0.639))
             .navigationTitle("Refine Keyboard")
         }
     }

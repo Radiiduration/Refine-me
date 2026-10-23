@@ -14,7 +14,7 @@ body,
 
 body {
   font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #1d3028;
+  color: #25263a;
 }
 
 .native-refine {
@@ -27,12 +27,12 @@ body {
 .native-fab {
   width: 44px;
   height: 44px;
-  border: 1px solid #d8e7dc;
+  border: 1px solid #d9cdec;
   border-radius: 15px;
   background: #fff;
-  color: #12664d;
+  color: #6752a3;
   font-size: 22px;
-  box-shadow: 0 8px 26px #17241f30;
+  box-shadow: 0 8px 26px #28213930;
   cursor: pointer;
   transition: transform .15s;
 }
@@ -46,10 +46,10 @@ body {
   flex-direction: column;
   padding: 0;
   overflow: hidden;
-  border: 1px solid #dfe8e1;
+  border: 1px solid #e8e2d9;
   border-radius: 18px;
   background: #fff;
-  box-shadow: 0 20px 65px #17241f38;
+  box-shadow: 0 20px 65px #28213938;
 }
 
 .native-header {
@@ -59,19 +59,19 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 17px;
-  border-bottom: 1px solid #edf2ef;
+  border-bottom: 1px solid #e8e2d9;
 }
 
 .native-header b { display: block; font-size: 15px; }
-.native-header small { display: block; margin-top: 2px; color: #7b8981; font-size: 11px; }
+.native-header small { display: block; margin-top: 2px; color: #858394; font-size: 11px; }
 
 .native-close {
   width: 28px;
   height: 28px;
   border: 0;
   border-radius: 8px;
-  background: #f5f8f5;
-  color: #738179;
+  background: #f0ebf8;
+  color: #777385;
   font-size: 20px;
   cursor: pointer;
 }
@@ -90,23 +90,23 @@ body {
   white-space: pre-wrap;
 }
 
-.native-source { border: 1px solid #e8eee8; background: #f6f9f5; color: #526158; }
-.native-placeholder { color: #94a097; }
-.native-output { margin-top: 10px; border: 1px solid #deeadf; background: #f3f8f3; color: #244b37; }
+.native-source { border: 1px solid #e8e2d9; background: #fbf9f5; color: #686477; }
+.native-placeholder { color: #858394; }
+.native-output { margin-top: 10px; border: 1px solid #d9cdec; background: #f0ebf8; color: #4d3a82; }
 .native-tones { display: flex; flex-wrap: wrap; gap: 6px; margin: 11px 0; }
 
 .native-tones button {
   padding: 6px 10px;
-  border: 1px solid #e1e9e3;
+  border: 1px solid #e8e2d9;
   border-radius: 999px;
   background: #fff;
-  color: #4f6257;
+  color: #666374;
   font-size: 11px;
   cursor: pointer;
 }
 
-.native-tones button.selected { border-color: #b8d5b8; background: #e8f3e8; color: #245b3b; }
-.native-message { margin-top: 7px; color: #64736a; font-size: 11px; }
+.native-tones button.selected { border-color: #b8a7d3; background: #eee9f7; color: #4d3a82; }
+.native-message { margin-top: 7px; color: #777385; font-size: 11px; }
 
 .native-footer {
   display: flex;
@@ -115,7 +115,7 @@ body {
   justify-content: flex-end;
   gap: 8px;
   padding: 8px 14px;
-  border-top: 1px solid #edf2ef;
+  border-top: 1px solid #e8e2d9;
 }
 
 .native-primary,
@@ -128,6 +128,6 @@ body {
   cursor: pointer;
 }
 
-.native-primary { border: 1px solid #12664d; background: #12664d; color: white; }
+.native-primary { border: 1px solid #6752a3; background: #6752a3; color: white; }
 .native-primary:disabled { opacity: .65; }
-.native-secondary { border: 1px solid #dfe8e1; background: white; color: #486052; }
+.native-secondary { border: 1px solid #e8e2d9; background: white; color: #666374; }

@@ -49,19 +49,19 @@ class RefineImeService : InputMethodService() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             setPadding(dp(5), dp(6), dp(5), dp(8))
-            setBackgroundColor(Color.rgb(242, 244, 240))
+            setBackgroundColor(RefinePalette.canvas)
         }
         val toolbar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(5), 0, dp(5), 0)
-            background = round(Color.WHITE, dp(12), 0xFFE5EAE3.toInt())
+            background = round(Color.WHITE, dp(12), RefinePalette.line)
         }
         val goal = Button(this).apply {
             text = "$goalLabel ▾"
             isAllCaps = false
-            setTextColor(0xFF355345.toInt())
-            setBackground(round(0xFFEDF3E9.toInt(), dp(10)))
+            setTextColor(RefinePalette.accent)
+            setBackground(round(RefinePalette.lavender, dp(10)))
             textSize = 12f
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
             setOnClickListener { showGoalMenu(this) }
@@ -75,7 +75,7 @@ class RefineImeService : InputMethodService() {
             }
             isAllCaps = false
             setTextColor(Color.WHITE)
-            setBackground(round(0xFF1B5844.toInt(), dp(12)))
+            setBackground(round(RefinePalette.accent, dp(12)))
             textSize = 14f
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
             setOnClickListener {
@@ -86,7 +86,7 @@ class RefineImeService : InputMethodService() {
         status = TextView(this).apply {
             text = statusText
             textSize = 12f
-            setTextColor(0xFF63756A.toInt())
+            setTextColor(RefinePalette.muted)
             maxLines = 1
             setPadding(dp(10), 0, dp(4), 0)
         }
@@ -98,12 +98,12 @@ class RefineImeService : InputMethodService() {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(dp(10), dp(4), dp(6), dp(4))
-                background = round(Color.WHITE, dp(10), 0xFFE5EAE3.toInt())
+                background = round(Color.WHITE, dp(10), RefinePalette.line)
             }
             review.addView(TextView(this).apply {
                 text = suggestion
                 textSize = 12f
-                setTextColor(0xFF40564A.toInt())
+                setTextColor(0xFF4D3A82.toInt())
                 maxLines = 2
                 ellipsize = android.text.TextUtils.TruncateAt.END
                 gravity = Gravity.CENTER_VERTICAL
@@ -112,8 +112,8 @@ class RefineImeService : InputMethodService() {
                 text = "Try again"
                 isAllCaps = false
                 textSize = 11f
-                setTextColor(0xFF355345.toInt())
-                setBackground(round(0xFFEDF3E9.toInt(), dp(9)))
+                setTextColor(RefinePalette.accent)
+                setBackground(round(RefinePalette.lavender, dp(9)))
                 setOnClickListener { retrySuggestion() }
             }, LinearLayout.LayoutParams(dp(82), dp(36)).apply { leftMargin = dp(5) })
             root.addView(review, rowParams(52))
@@ -156,12 +156,12 @@ class RefineImeService : InputMethodService() {
         text = label
         textSize = if (label.length > 1) 13f else 20f
         gravity = Gravity.CENTER
-        setTextColor(Color.rgb(35, 47, 41))
+        setTextColor(RefinePalette.text)
         typeface = Typeface.create("sans-serif", Typeface.NORMAL)
         val special = label in setOf("123", "ABC", "🌐", "return", "⇧", "⌫")
-        background = if (label == "space") round(0xFFFDFEFE.toInt(), dp(6))
-            else if (special) round(0xFFE4E9E3.toInt(), dp(7))
-            else round(Color.WHITE, dp(7), 0xFFE2E7E1.toInt())
+        background = if (label == "space") round(RefinePalette.surface, dp(6))
+            else if (special) round(0xFFEAE6F0.toInt(), dp(7))
+            else round(Color.WHITE, dp(7), RefinePalette.line)
         setOnClickListener { action() }
         layoutParams = LinearLayout.LayoutParams(0, dp(height), 1f).apply {
             setMargins(dp(2), dp(2), dp(2), dp(2))

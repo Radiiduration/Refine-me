@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 LLAMA_MODEL := Qwen/Qwen3-4B-GGUF:Q4_K_M
 VERSION := 0.1.0
 
-.PHONY: model-server api mobile-api web extension test desktop-build web-build extension-build ios-project ios-build android-build release
+.PHONY: model-server api mobile-api web extension test eval desktop-build web-build extension-build ios-project ios-build android-build release
 model-server:
 	llama-server -hf $(LLAMA_MODEL) --alias qwen3-4b-q4km --host 127.0.0.1 --port 8080 --ctx-size 4096 --parallel 1 --threads 4 --cors-origins http://localhost:8000,http://127.0.0.1:8000,tauri://localhost
 
@@ -32,6 +32,9 @@ extension:
 
 test:
 	$(PYTHON) -m pytest apps/api/tests -q
+
+eval:
+	$(PYTHON) -m eval.run_eval
 
 web-build:
 	cd apps/web && npm run build

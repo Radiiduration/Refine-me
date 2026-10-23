@@ -27,28 +27,28 @@ class SettingsActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.rgb(247, 249, 246)
-        window.navigationBarColor = Color.rgb(247, 249, 246)
+        window.statusBarColor = RefinePalette.canvas
+        window.navigationBarColor = RefinePalette.canvas
         window.decorView.systemUiVisibility = 0x00002000 or 0x00000010
 
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(18), dp(20), dp(26))
-            setBackgroundColor(0xFFF7F9F6.toInt())
+            setBackgroundColor(RefinePalette.canvas)
         }
 
         val hero = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(19), dp(20), dp(20))
-            background = rounded(0xFF173F34.toInt(), dp(18))
+            background = rounded(RefinePalette.ink, dp(18))
         }
         val brandLine = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         brandLine.addView(TextView(this).apply {
             text = "✦"
             textSize = 19f
             gravity = Gravity.CENTER
-            setTextColor(0xFF183D31.toInt())
-            background = rounded(0xFFD7ED7D.toInt(), dp(10))
+            setTextColor(RefinePalette.accent)
+            background = rounded(RefinePalette.lavender, dp(10))
         }, LinearLayout.LayoutParams(dp(36), dp(36)))
         brandLine.addView(TextView(this).apply {
             text = "refine."
@@ -68,7 +68,7 @@ class SettingsActivity : Activity() {
         hero.addView(TextView(this).apply {
             text = "Thoughtful follow-ups, clear asks, and kind boundaries—right in your keyboard."
             textSize = 14f
-            setTextColor(0xFFD1DFD7.toInt())
+            setTextColor(0xFFE4DEF0.toInt())
             setPadding(0, 0, 0, dp(12))
         })
         hero.addView(TextView(this).apply {
@@ -76,11 +76,11 @@ class SettingsActivity : Activity() {
             textSize = 9f
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
             letterSpacing = .07f
-            setTextColor(0xFFD7ED7D.toInt())
+            setTextColor(RefinePalette.coral)
         })
         page.addView(hero, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(22) })
 
-        title(page, "Connect your computer", "Your draft is rewritten by the model on your computer over an encrypted HTTPS connection.")
+        title(page, "Local first · connect your Mac", "Your selected text is sent over HTTPS to the model running on your own computer.")
 
         val storedAddress = prefs.getString("api_url", "").orEmpty()
         val emulatorAddress = if (storedAddress == "http://10.0.2.2:8001") {
@@ -91,7 +91,7 @@ class SettingsActivity : Activity() {
         val connectionCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), dp(13), dp(14), dp(4))
-            background = rounded(Color.WHITE, dp(13), 0xFFE6EBE5.toInt())
+            background = rounded(Color.WHITE, dp(13), RefinePalette.line)
         }
         connectionCard.addView(label("API ADDRESS"))
         connectionCard.addView(apiUrl)
@@ -101,7 +101,7 @@ class SettingsActivity : Activity() {
         page.addView(TextView(this).apply {
             text = "Find the address and token in the Refine setup guide on your computer. Drafts stay on your local network."
             textSize = 12f
-            setTextColor(0xFF748078.toInt())
+            setTextColor(RefinePalette.muted)
             setPadding(dp(3), dp(9), dp(3), dp(4))
         })
         var saveConnectionButton: Button? = null
@@ -157,7 +157,7 @@ class SettingsActivity : Activity() {
         }, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(5); bottomMargin = dp(10) })
         message = TextView(this).apply {
             textSize = 12f
-            setTextColor(0xFF287453.toInt())
+            setTextColor(RefinePalette.accent)
             gravity = Gravity.CENTER
             setPadding(0, dp(6), 0, dp(6))
         }
@@ -166,7 +166,7 @@ class SettingsActivity : Activity() {
             text = "Refine appears in your keyboard toolbar. It does not float over other apps. Background App Refresh is an iPhone setting and is not used on Android."
             textSize = 11f
             gravity = Gravity.CENTER
-            setTextColor(0xFF89948D.toInt())
+            setTextColor(RefinePalette.muted)
             setPadding(dp(5), dp(10), dp(5), 0)
         })
 
@@ -185,12 +185,12 @@ class SettingsActivity : Activity() {
             text = heading
             textSize = 18f
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
-            setTextColor(0xFF253B30.toInt())
+            setTextColor(RefinePalette.text)
         })
         parent.addView(TextView(this).apply {
             text = subtitle
             textSize = 12f
-            setTextColor(0xFF78847C.toInt())
+            setTextColor(RefinePalette.muted)
             setPadding(0, dp(5), 0, dp(12))
         })
     }
@@ -200,7 +200,7 @@ class SettingsActivity : Activity() {
         textSize = 9f
         letterSpacing = .06f
         typeface = Typeface.create("sans-serif", Typeface.BOLD)
-        setTextColor(0xFF748177.toInt())
+        setTextColor(RefinePalette.muted)
         setPadding(dp(1), dp(7), 0, dp(5))
     }
 
@@ -210,8 +210,8 @@ class SettingsActivity : Activity() {
         textSize = 14f
         setSingleLine(true)
         inputType = if (secret) 0x00000081 else 0x00000011
-        setTextColor(0xFF263A30.toInt())
-        setHintTextColor(0xFFA0AAA3.toInt())
+        setTextColor(RefinePalette.text)
+        setHintTextColor(0xFF93909D.toInt())
         setPadding(dp(1), dp(7), dp(1), dp(11))
         background = null
         layoutParams = LinearLayout.LayoutParams(-1, dp(45))
@@ -220,19 +220,19 @@ class SettingsActivity : Activity() {
     private fun stepCard(number: String, heading: String, detail: String) = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(dp(14), dp(13), dp(14), dp(14))
-        background = rounded(Color.WHITE, dp(13), 0xFFE6EBE5.toInt())
+        background = rounded(Color.WHITE, dp(13), RefinePalette.line)
         val row = LinearLayout(this@SettingsActivity).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         row.addView(TextView(this@SettingsActivity).apply {
             text = number
             textSize = 11f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
-            setTextColor(0xFF447253.toInt())
-            background = rounded(0xFFEDF4E8.toInt(), dp(8))
+            setTextColor(RefinePalette.accent)
+            background = rounded(RefinePalette.lavender, dp(8))
         }, LinearLayout.LayoutParams(dp(28), dp(28)))
         val labels = LinearLayout(this@SettingsActivity).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(10), 0, 0, 0) }
-        labels.addView(TextView(this@SettingsActivity).apply { text = heading; textSize = 12f; typeface = Typeface.DEFAULT_BOLD; setTextColor(0xFF35473C.toInt()) })
-        labels.addView(TextView(this@SettingsActivity).apply { text = detail; textSize = 10f; setTextColor(0xFF89938C.toInt()); setPadding(0, dp(3), 0, 0) })
+        labels.addView(TextView(this@SettingsActivity).apply { text = heading; textSize = 12f; typeface = Typeface.DEFAULT_BOLD; setTextColor(RefinePalette.text) })
+        labels.addView(TextView(this@SettingsActivity).apply { text = detail; textSize = 10f; setTextColor(RefinePalette.muted); setPadding(0, dp(3), 0, 0) })
         row.addView(labels)
         addView(row)
     }
@@ -242,8 +242,8 @@ class SettingsActivity : Activity() {
         isAllCaps = false
         textSize = 13f
         typeface = Typeface.create("sans-serif", Typeface.BOLD)
-        setTextColor(when { primary -> Color.WHITE; outlined -> 0xFF356448.toInt(); else -> 0xFF4B6254.toInt() })
-        background = when { primary -> rounded(0xFF1B5844.toInt(), dp(10)); outlined -> rounded(Color.WHITE, dp(10), 0xFFDCE7DC.toInt()); else -> rounded(0xFFEDF3E9.toInt(), dp(10)) }
+        setTextColor(when { primary -> Color.WHITE; outlined -> RefinePalette.accent; else -> RefinePalette.muted })
+        background = when { primary -> rounded(RefinePalette.accent, dp(10)); outlined -> rounded(Color.WHITE, dp(10), RefinePalette.line); else -> rounded(RefinePalette.lavender, dp(10)) }
         stateListAnimator = null
         setOnClickListener { callback() }
     }

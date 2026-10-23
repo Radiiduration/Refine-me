@@ -10,3 +10,93 @@
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 @media(min-width:1000px){.page-content{padding-top:54px}.work-grid{grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);gap:20px}.draft-panel,.result-panel{padding:25px}.textarea-wrap textarea{min-height:242px;font-size:14px}.empty-result{padding-top:42px}.result-art{height:138px;margin-bottom:14px}.empty-result h3{font-size:21px}.empty-result>p{font-size:11px}.steps{margin-top:25px;padding-top:17px;gap:14px}.steps>div{font-size:10px}.result-copy{min-height:230px;font-size:14px}.tone-chip{height:32px;font-size:10px}.panel-heading h2{font-size:17px}.welcome-row h1{font-size:48px}}
 .replace-button{height:37px;border:1px solid #dce8dc;border-radius:8px;background:#eff6eb;color:#3c6c47;font-size:10px;font-weight:650;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 11px}.replace-button:hover{background:#e2efdd}
+
+
+/* Keep the native desktop studio in sync with the web palette. */
+/* Refine's own palette: warm paper, ink navy, lavender and persimmon. */
+:root{--canvas:#f7f4ee;--paper:#fffdf9;--line:#e8e2d9;--lime:#6752a3;color-scheme:light}
+body,.main-area{background:#f7f4ee;color:#20263a}
+.sidebar{background:#fbf9f5;border-right:1px solid #e8e2d9;box-shadow:none;color:#20263a}
+.brand-mark{background:#6752a3;color:#fff;border-radius:10px}
+.brand-name small,.sidebar-foot,.version{color:#858394}
+.new-draft{background:#fffdf9;border-color:#e5dfd6;color:#39384b}
+.new-draft:hover{background:#f0ebf8}
+.sidebar-label{color:#9692a0}
+.side-link{color:#646174}
+.side-link.active{background:#eee9f7;color:#4d3a82}
+.side-link:hover:not(.active){background:#f1eee8;color:#39384b}
+.sidebar-note{background:#f0ebf8;border-color:#e3daf2}
+.note-icon{background:#e4dcf2;color:#6752a3}
+.sidebar-note p{color:#686477}.sidebar-note button,.page-footer button{color:#6752a3}
+.topbar{background:#fbf9f5ed;border-color:#e8e2d9}
+.breadcrumb{color:#8c8996}.breadcrumb strong{color:#39384b}
+.privacy-chip,.help-button,.quiet-icon,.setup-chip{background:#fffdf9;border-color:#e6e0d8;color:#514f60}
+.privacy-chip svg,.help-button:hover,.quiet-icon:hover,.setup-chip svg{color:#6752a3}
+.help-button:hover,.quiet-icon:hover,.setup-chip:hover{background:#f0ebf8;border-color:#d9cdec}
+.page-content,.install-page{color:#25263a}
+.eyebrow,.install-kicker{color:#6752a3}.eyebrow-dot{background:#d88370;box-shadow:0 0 0 4px #f5e4dc}
+.welcome-row h1,.install-hero h1,.section-heading h2{color:#25263a}
+.welcome-row h1 em,.install-hero h1 em,.section-heading h2 em{color:#8c6abc}
+.welcome-copy,.section-heading>p{color:#737182}
+.model-status{background:#fffdf9;border-color:#e8e2d9}.model-status b{color:#39384b}.model-status small{color:#858394}
+.panel{background:#fffdf9;border-color:#e8e2d9;box-shadow:0 12px 36px #3b30410b}
+.panel:hover{border-color:#d9cdec;box-shadow:0 18px 44px #3b304112}
+.panel-kicker{color:#858394}.panel-kicker span{color:#b2acba}.panel-heading h2{color:#343348}
+.textarea-wrap{background:#fbf9f5;border-color:#e5dfd6}
+.textarea-wrap:focus-within{border-color:#a28ac8;box-shadow:0 0 0 3px #8c6abc20}
+.textarea-wrap textarea{color:#29283b}.textarea-wrap textarea::placeholder,.editor-bottom{color:#93909d}
+.editor-bottom button,.example-link,.text-action,.install-footer a{color:#6752a3}
+.keyboard-hint{border-color:#dfd9e4;color:#777385}
+.tone-section,.steps,.result-foot{border-color:#e8e2d9}.tone-label{color:#39384b}.tone-label span:last-child{color:#898694}
+.tone-chip{background:#fffdf9;border-color:#e3ddd5;color:#666374}
+.tone-chip:hover{border-color:#b8a7d3;color:#554286}
+.tone-chip.selected{background:#eee9f7;color:#4d3a82;border-color:#b8a7d3;box-shadow:inset 0 0 0 1px #ded2ef}
+.refine-button,.copy-button,.modal-done,.lime-button{background:#6752a3;border-color:#6752a3;color:#fff;box-shadow:none}
+.refine-button:hover:not(:disabled),.copy-button:hover,.modal-done:hover,.lime-button:hover{background:#554286;border-color:#554286}
+.refine-button>span{color:#fff;border-color:#a898c9}
+.context-button,.again-button,.outline-button{background:#fffdf9;border-color:#e3ddd5;color:#5f5d6d}
+.context-button:hover:not(:disabled),.again-button:hover,.outline-button:hover{background:#f0ebf8;border-color:#cdbde1;color:#4d3a82}
+.under-note,.result-meta,.result-foot{color:#858394}.under-note svg,.result-tone{color:#8c6abc}
+.result-panel:before{background:#d883700b}.ready-badge{background:#f5e4dc;color:#a54f40}
+.empty-result h3{color:#39384b}.empty-result>p{color:#777385}
+.art-orbit{border-color:#d7cfe0}.orbit-two{border-color:#e6c8be}
+.art-spark{background:#eee9f7;color:#6752a3;box-shadow:0 6px 22px #6752a31c}
+.art-dot{background:#d88370}.dot-two{background:#9c88c4}
+.steps>div{color:#686677}.steps>div span{background:#f0ebf8;color:#6752a3}
+.result-copy{background:#fbf9f5;color:#39384b;border-color:#e8e2d9}.result-empty{color:#858394}.result-spinner{color:#8c6abc}
+.alert-error{background:#fff0eb;color:#963e33;border-color:#edc8bd}.alert-success{background:#f1ebf7;color:#4d3a82;border-color:#d9cdec}
+.clarify-block,.advanced-tones{background:#fbf9f5;border-color:#e8e2d9}.loading-line{color:#737182}
+.question>b{color:#39384b}.question-chip{background:#fffdf9;border-color:#e3ddd5;color:#666374}
+.question-chip.selected{border-color:#a28ac8;background:#eee9f7;color:#4d3a82}.context-continue{color:#6752a3}
+.advanced-tones>span,.advanced-tones small{color:#777385}.advanced-tones button{background:#fffdf9;border-color:#e3ddd5}.advanced-tones button:hover{border-color:#b8a7d3}.advanced-tones b{color:#4d3a82}
+.privacy-modal{background:#fffdf9;border-color:#e8e2d9;color:#39384b;box-shadow:0 28px 90px #28213938}
+.modal-close{background:#fbf9f5;border-color:#e3ddd5;color:#777385}.modal-icon{background:#eee9f7;color:#6752a3}
+.privacy-modal h2{color:#29283b}.privacy-modal>p,.api-setting-help,.privacy-points small{color:#777385}
+.api-setting-label{color:#555365}.api-setting-input{background:#fbf9f5;border-color:#e3ddd5;color:#29283b}
+.api-setting-input:focus{border-color:#a28ac8;box-shadow:0 0 0 3px #8c6abc20}
+.privacy-points{border-color:#e8e2d9}.privacy-points b{color:#39384b}.privacy-points svg{color:#8c6abc}
+.mobile-brand{color:#29283b}
+.install-page{color:#29283b}.install-hero{border-color:#e5ded4}.install-kicker>span{background:#d88370}
+.install-hero-copy>p{color:#737182}.install-facts{color:#858394}.install-facts i{background:#d88370}
+.install-visual{border-color:#343750;background:radial-gradient(ellipse at 51% 52%,#353556 0,transparent 56%),linear-gradient(145deg,#24253b,#191a2e)}
+.install-visual:after{background-image:radial-gradient(#8f89b2 1px,transparent 1px)}
+.visual-topline,.visual-caption{color:#aaa8be}.flow-orbit{border-color:#79709a}.orbit-b{border-color:#555875}
+.flow-core{border-color:#9c88c4;background:#27283f;box-shadow:0 0 0 15px #b9a2e30c,0 0 45px #b9a2e328;color:#d3c0f3}
+.flow-core small{color:#b2aec5}.flow-node{border-color:#565873;background:#24253be8;box-shadow:0 10px 25px #11121d66}
+.flow-node small{color:#e3a08e}.flow-node b{color:#f4f0fa}.flow-node span{color:#b3b1c3}
+.requirements-strip,.repo-install-row{border-color:#e5ded4;background:#fffdf9}
+.requirements-strip b,.repo-install-row>div:first-child b{color:#6752a3}.requirements-strip span{color:#454457}.requirements-strip .optional-note,.repo-install-row>div:first-child span{color:#777385}
+.install-tabs{border-color:#e5ded4}.install-tabs button{color:#777385}.install-tabs button:hover{color:#39384b}.install-tabs button.selected{border-bottom-color:#8c6abc;color:#4d3a82}.install-tabs button.selected svg{color:#8c6abc}
+.install-step{border-color:#e5ded4}.install-step>span{border-color:#d9cdec;color:#6752a3}
+.install-step h3{color:#39384b}.install-step p{color:#737182}.install-step p code{color:#554286;background:#f0ebf8}
+.install-command{border-color:#343750;background:#24253b}.install-command>div{border-color:#3d3e58}.install-command>div span{color:#b3b1c3}
+.install-command>div button{color:#d6c7ed}.install-command>div button:hover{color:#f2b1a0}.install-command pre{color:#f3effa}
+.install-sidecard{border-color:#e5ded4;background:#fffdf9}.sidecard-mark{border-color:#d9cdec;background:#eee9f7;color:#6752a3}
+.sidecard-kicker{color:#8c6abc}.install-sidecard h3{color:#39384b}.install-sidecard>p{color:#737182}
+.sidecard-divider{background:#e8e2d9}.sidecard-meta{color:#686677}.sidecard-meta svg{color:#8c6abc}
+.install-callout{border-color:#e6c8be;background:#fbf0eb;color:#6b514b}.install-callout svg{color:#b75f4d}
+.text-action:hover,.install-footer a:hover{color:#a54f40}.install-footer{border-color:#e5ded4;color:#858394}
+@media(max-width:700px){.install-tabs button{color:#777385}}
+.connection-error{color:#a54f40}
+.install-local-first{display:flex;align-items:center;gap:9px;width:max-content;max-width:100%;margin-top:17px;padding:10px 13px;border:1px solid #d9cdec;border-radius:9px;background:#f0ebf8;color:#4d3a82;font-size:10px;line-height:1.45}
+.install-local-first svg{flex:none;color:#6752a3}.install-local-first b{font-size:9px;letter-spacing:.08em}.install-local-first span{color:#686477}

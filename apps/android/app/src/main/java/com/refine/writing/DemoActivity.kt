@@ -18,17 +18,17 @@ class DemoActivity : Activity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(22), dp(30), dp(22), dp(20))
-            setBackgroundColor(0xFFF7F9F8.toInt())
+            setBackgroundColor(RefinePalette.canvas)
         }
         root.addView(TextView(this).apply {
             text = "Try Refine"
             textSize = 27f
-            setTextColor(0xFF12382D.toInt())
+            setTextColor(RefinePalette.ink)
         })
         root.addView(TextView(this).apply {
             text = "Choose a goal like Follow-up or Kind boundary, select the draft, then tap ✦ Refine."
             textSize = 15f
-            setTextColor(0xFF52625B.toInt())
+            setTextColor(RefinePalette.muted)
             setPadding(0, dp(8), 0, dp(18))
         })
         draft = EditText(this).apply {
@@ -37,7 +37,7 @@ class DemoActivity : Activity() {
             gravity = Gravity.TOP or Gravity.START
             minLines = 4
             setPadding(dp(14), dp(14), dp(14), dp(14))
-            setBackgroundColor(0xFFFFFFFF.toInt())
+            setBackgroundColor(RefinePalette.surface)
             inputType = 0x00020001
         }
         root.addView(draft, LinearLayout.LayoutParams(-1, dp(170)))

@@ -317,3 +317,5 @@ body,.main-area{background:#f7f4ee;color:#20263a}
 .text-action:hover,.install-footer a:hover{color:#a54f40}.install-footer{border-color:#e5ded4;color:#858394}
 @media(max-width:700px){.install-tabs button{color:#777385}}
 .connection-error{color:#a54f40}
+.install-local-first{display:flex;align-items:center;gap:9px;width:max-content;max-width:100%;margin-top:17px;padding:10px 13px;border:1px solid #d9cdec;border-radius:9px;background:#f0ebf8;color:#4d3a82;font-size:10px;line-height:1.45}
+.install-local-first svg{flex:none;color:#6752a3}.install-local-first b{font-size:9px;letter-spacing:.08em}.install-local-first span{color:#686477}

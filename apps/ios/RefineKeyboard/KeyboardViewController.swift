@@ -1,5 +1,10 @@
 import UIKit
 
+private enum RefinePalette {
+    static let canvas = UIColor(red: 0.969, green: 0.957, blue: 0.933, alpha: 1)
+    static let accent = UIColor(red: 0.404, green: 0.322, blue: 0.639, alpha: 1)
+}
+
 private enum SharedSettings {
     static let group = "group.com.refine.writing"
     static let apiURL = "apiBaseURL"
@@ -19,7 +24,7 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.91, green: 0.92, blue: 0.95, alpha: 1)
+        view.backgroundColor = RefinePalette.canvas
         buildKeyboard()
     }
 
@@ -48,7 +53,7 @@ final class KeyboardViewController: UIInputViewController {
         refineButton.configuration = .filled()
         refineButton.configuration?.title = "✦  Refine"
         refineButton.configuration?.cornerStyle = .capsule
-        refineButton.configuration?.baseBackgroundColor = UIColor(red: 0.02, green: 0.48, blue: 0.36, alpha: 1)
+        refineButton.configuration?.baseBackgroundColor = RefinePalette.accent
         refineButton.configuration?.baseForegroundColor = .white
         refineButton.addTarget(self, action: #selector(refineSelection), for: .touchUpInside)
         refineButton.setContentHuggingPriority(.required, for: .horizontal)
@@ -56,7 +61,7 @@ final class KeyboardViewController: UIInputViewController {
         retryButton.configuration = .tinted()
         retryButton.configuration?.title = "↻"
         retryButton.configuration?.cornerStyle = .capsule
-        retryButton.configuration?.baseForegroundColor = UIColor(red: 0.02, green: 0.48, blue: 0.36, alpha: 1)
+        retryButton.configuration?.baseForegroundColor = RefinePalette.accent
         retryButton.accessibilityLabel = "Try another rewrite"
         retryButton.addTarget(self, action: #selector(retryRewrite), for: .touchUpInside)
         retryButton.isHidden = pendingRewrite == nil
