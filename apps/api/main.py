@@ -419,7 +419,9 @@ async def clarify(req: ClarifyRequest) -> ClarifyResponse:
         return response
 
     except Exception:
-        logger.exception("Clarification request failed")
+        # Model and transport exceptions can contain submitted text. Keep logs
+        # useful for operators without persisting drafts or model responses.
+        logger.warning("Clarification model request failed; response details omitted")
         raise HTTPException(status_code=502, detail="Clarification model returned an invalid response.")
 
 

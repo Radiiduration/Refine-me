@@ -1,11 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Check, CheckCircle2, ChevronDown, Clipboard, Command, Copy, FileEdit,
-  HelpCircle, Loader2, Lock, RotateCcw, ShieldCheck, Sparkles, Wand2, X,
+  ArrowRight, Check, CheckCircle2, ChevronDown, Clipboard, Command, Copy, FileEdit,
+  Globe2, HelpCircle, Laptop, Loader2, Lock, RotateCcw, ShieldCheck, Smartphone,
+  Sparkles, Terminal, Wand2, X,
 } from 'lucide-react';
 import './index.css';
 
-const DEFAULT_API_URL = import.meta.env.VITE_REFINE_API_URL || 'http://localhost:8001';
+const DEFAULT_API_URL = import.meta.env.VITE_REFINE_API_URL || 'http://localhost:8000';
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+function normalizeApiUrl(value: string): string {
+  const url = new URL(value.trim());
+  const loopback = LOOPBACK_HOSTS.has(url.hostname);
+  if (url.username || url.password || url.search || url.hash || (loopback ? url.protocol !== 'http:' && url.protocol !== 'https:' : url.protocol !== 'https:')) {
+    throw new Error('Use a local loopback address or a trusted HTTPS API address.');
+  }
+  return `${url.origin}${url.pathname.replace(/\/$/, '')}`;
+}
+function initialApiUrl(): string {
+  try { return normalizeApiUrl(localStorage.getItem('refine.apiUrl') || DEFAULT_API_URL); }
+  catch { return DEFAULT_API_URL; }
+}
 const SAMPLE = 'hey can you send me the report when you get a chance';
 const BASE_TONES: Record<string, { name: string; description: string }> = {
   friendly: { name: 'Friendly', description: 'Warm and natural' },
@@ -17,6 +31,106 @@ const BASE_TONES: Record<string, { name: string; description: string }> = {
 type AppState = 'INPUT' | 'CLARIFYING' | 'TONE_SELECT' | 'REWRITING' | 'DONE';
 type Tone = { name: string; description: string };
 type Question = { id: string; q: string; options: string[] };
+type InstallPlatform = 'Mac' | 'Web' | 'Android' | 'iPhone' | 'Desktop';
+
+const INSTALL_COMMANDS = {
+  clone: 'git clone https://github.com/Radiiduration/Refine-me.git\ncd Refine-me',
+  server: 'brew install llama.cpp\npython3 -m venv .venv\n. .venv/bin/activate\npip install -r apps/api/requirements.lock',
+  model: 'make model-server',
+  api: 'make api',
+  android: 'make android-build',
+  ios: 'make ios-project',
+  desktop: 'cd apps/desktop\nnpm ci\nnpm run tauri dev',
+  web: 'cd apps/web\nnpm ci\nnpm run dev',
+  remoteApi: 'export REFINE_MOBILE_TOKEN="$(openssl rand -hex 32)"\nexport REFINE_ALLOWED_ORIGINS="https://your-site.example"\nexport REFINE_TLS_CERTFILE="/path/to/trusted-cert.pem"\nexport REFINE_TLS_KEYFILE="/path/to/private-key.pem"\nmake mobile-api',
+};
+
+function InstallGuide({ onConfigure, onOpenStudio }: { onConfigure: () => void; onOpenStudio: () => void }) {
+  const [platform, setPlatform] = useState<InstallPlatform>('Mac');
+  const [copied, setCopied] = useState('');
+  const copy = async (key: string, command: string) => {
+    try {
+      await navigator.clipboard.writeText(command);
+      setCopied(key);
+      window.setTimeout(() => setCopied(''), 1800);
+    } catch {
+      setCopied('');
+    }
+  };
+  const command = (key: keyof typeof INSTALL_COMMANDS, label: string) => (
+    <div className="install-command">
+      <div><span><Terminal size={13} /> TERMINAL / {label}</span><button onClick={() => void copy(key, INSTALL_COMMANDS[key])} aria-label={`Copy ${label} command`}>{copied === key ? <Check size={14} /> : <Copy size={14} />}{copied === key ? 'Copied' : 'Copy'}</button></div>
+      <pre><code>{INSTALL_COMMANDS[key]}</code></pre>
+    </div>
+  );
+
+  return (
+    <section className="install-page" id="install-guide">
+      <div className="install-hero">
+        <div className="install-hero-copy">
+          <div className="install-kicker"><span /> YOUR MODEL. YOUR WORDS.</div>
+          <h1>Private writing,<br /><em>set up your way.</em></h1>
+          <p>Run the model on your Mac, then connect Refine on the devices where you write. Follow the steps for your setup below.</p>
+          <div className="install-hero-actions"><button className="lime-button" onClick={() => document.getElementById('install-steps')?.scrollIntoView({ behavior: 'smooth' })}>Start setup <ArrowRight size={16} /></button><button className="outline-button" onClick={onOpenStudio}>Open writing studio</button></div>
+          <div className="install-facts"><span>LOCAL MODEL</span><i /> <span>NO ACCOUNT</span><i /> <span>YOUR API</span></div>
+        </div>
+        <div className="install-visual" aria-label="Refine setup flow diagram">
+          <div className="visual-topline"><span>REFINE / PRIVATE BY DESIGN</span><span>SETUP 001</span></div>
+          <div className="flow-orbit orbit-a" /><div className="flow-orbit orbit-b" />
+          <div className="flow-core"><Sparkles size={25} /><b>REFINE</b><small>LOCAL MODEL</small></div>
+          <div className="flow-node node-server"><small>01 / RUN</small><b>Your Mac</b><span>Model + API</span></div>
+          <div className="flow-node node-client"><small>02 / CONNECT</small><b>Your device</b><span>Web · Android · iPhone</span></div>
+          <div className="visual-caption"><span>WORDS STAY YOURS</span><span>REFINE / 001</span></div>
+        </div>
+      </div>
+
+      <div className="install-section" id="install-steps">
+        <div className="section-heading">
+          <div><div className="install-kicker"><span /> GET STARTED</div><h2>One local server.<br /><em>Your choice of keyboard.</em></h2></div>
+          <p>Start with the Mac that runs your model. Then pick the Refine client you want to install.</p>
+        </div>
+        <div className="requirements-strip"><b>BEFORE YOU START</b><span>Mac · 16 GB memory recommended · Git · Python 3 · llama.cpp</span><span className="optional-note">The iPhone and Android keyboards connect to the Mac over trusted Wi-Fi.</span></div>
+        <div className="repo-install-row"><div><b>FIRST, GET THE PROJECT</b><span>Run these commands in Terminal, then follow the setup for your device.</span></div>{command('clone', 'CLONE REFINE')}</div>
+
+        <div className="install-tabs" role="tablist" aria-label="Choose an installation guide">
+          {(['Mac', 'Web', 'Android', 'iPhone', 'Desktop'] as InstallPlatform[]).map((item) => <button key={item} role="tab" aria-selected={platform === item} className={platform === item ? 'selected' : ''} onClick={() => setPlatform(item)}>{item === 'Mac' ? <Laptop size={16} /> : item === 'Web' ? <Globe2 size={16} /> : item === 'Desktop' ? <Terminal size={16} /> : <Smartphone size={16} />}{item}</button>)}
+        </div>
+
+        <div className="install-content">
+          <div className="install-instructions">
+            {platform === 'Mac' && <>
+              <div className="install-step"><span>01</span><div><h3>Install the local model runtime</h3><p>Install llama.cpp and the Python packages Refine uses. The model weights download the first time you start the model server.</p>{command('server', 'INSTALL')}</div></div>
+              <div className="install-step"><span>02</span><div><h3>Start the model and API</h3><p>Keep each process running in its own terminal. The API stays on this Mac at <code>127.0.0.1:8000</code>.</p>{command('model', 'MODEL SERVER')}{command('api', 'LOCAL API')}</div></div>
+              <div className="install-step"><span>03</span><div><h3>Choose a Refine client</h3><p>Use the Web tab to run the editor locally, or select Android, iPhone, or Desktop for device-specific instructions.</p><button className="text-action" onClick={() => setPlatform('Web')}>Choose a client <ArrowRight size={14} /></button></div></div>
+            </>}
+            {platform === 'Web' && <>
+              <div className="install-step"><span>01</span><div><h3>Run the editor on this Mac</h3><p>Start the local API first, then run the web editor from the repository root. It connects to the API on port 8000.</p>{command('web', 'WEB EDITOR')}</div></div>
+              <div className="install-step"><span>02</span><div><h3>Connect a hosted website</h3><p>A deployed website is a static editor; it does not host your model. For access from a hosted site, configure a trusted HTTPS API and add that exact site origin to <code>REFINE_ALLOWED_ORIGINS</code>. Replace the example origin and certificate paths before running this in your API terminal.</p>{command('remoteApi', 'PRIVATE HTTPS API')}<div className="install-callout"><Lock size={15} /><span>Trust the certificate on each client and keep the API on a trusted private network. Never share the generated token or private TLS key. Don’t expose the development API directly to the public internet.</span></div></div></div>
+              <div className="install-step"><span>03</span><div><h3>Save your connection</h3><p>Enter the API address and device token in Refine’s privacy settings. The token stays in this browser tab’s memory.</p><button className="text-action" onClick={onConfigure}>Configure API connection <ArrowRight size={14} /></button></div></div>
+            </>}
+            {platform === 'Android' && <>
+              <div className="install-step"><span>01</span><div><h3>Build the Android app</h3><p>From the repository root, create the installable debug APK.</p>{command('android', 'ANDROID BUILD')}<p className="small-help">APK: <code>apps/android/app/build/outputs/apk/debug/app-debug.apk</code></p></div></div>
+              <div className="install-step"><span>02</span><div><h3>Install and connect</h3><p>Install the APK with Android Studio or transfer it to your phone. In Refine, enter your Mac’s private HTTPS address and the device token used by the API. The token is encrypted with Android Keystore.</p><div className="install-callout"><Lock size={15} /><span>Phone and Mac must be on the same trusted Wi-Fi. Android requires HTTPS for the connection.</span></div></div></div>
+              <div className="install-step"><span>03</span><div><h3>Enable Refine Keyboard</h3><p>Open Refine → Enable Refine Keyboard, allow it in Android settings, then select Refine from the keyboard switcher.</p></div></div>
+            </>}
+            {platform === 'iPhone' && <>
+              <div className="install-step"><span>01</span><div><h3>Prepare Xcode signing</h3><p>You need the full Xcode app and an Apple development team. Register the Refine App Group and enable Keychain Sharing for both app targets.</p>{command('ios', 'GENERATE XCODE PROJECT')}</div></div>
+              <div className="install-step"><span>02</span><div><h3>Build and install from Xcode</h3><p>Open <code>apps/ios/Refine.xcodeproj</code>, choose your development team for both targets, then build and install Refine on your iPhone.</p></div></div>
+              <div className="install-step"><span>03</span><div><h3>Connect and enable the keyboard</h3><p>Save your Mac’s private HTTPS address and API token in the Refine app. Then go to Settings → General → Keyboard → Keyboards → Add New Keyboard → Refine. Enable Full Access so the keyboard can reach your local API.</p><div className="install-callout"><Lock size={15} /><span>Keep iPhone and Mac on trusted Wi-Fi. Background App Refresh is not needed.</span></div></div></div>
+            </>}
+            {platform === 'Desktop' && <>
+              <div className="install-step"><span>01</span><div><h3>Start the local API</h3><p>Install and start the model server using the Mac setup steps first. The desktop app uses the local API at port 8000.</p><button className="text-action" onClick={() => setPlatform('Mac')}>View Mac setup <ArrowRight size={14} /></button></div></div>
+              <div className="install-step"><span>02</span><div><h3>Run Refine Desktop</h3><p>Install the app dependencies, then launch the Tauri development app from the repository.</p>{command('desktop', 'DESKTOP APP')}</div></div>
+              <div className="install-step"><span>03</span><div><h3>Use the writing popover</h3><p>Select text in an app, invoke Refine from the menu bar or shortcut, choose a tone, then review the result before replacing your text.</p></div></div>
+            </>}
+          </div>
+          <aside className="install-sidecard"><div className="sidecard-mark"><ShieldCheck size={19} /></div><div className="sidecard-kicker">YOUR SETUP</div><h3>Configure the connection.</h3><p>Refine sends selected text to the API address you choose. For the local editor, use the default loopback address. For another device, use a trusted HTTPS endpoint.</p><button className="lime-button full" onClick={onConfigure}>Open API settings <ArrowRight size={15} /></button><div className="sidecard-divider" /><div className="sidecard-meta"><Lock size={14} /><span>No account, cloud history, or third-party model calls.</span></div></aside>
+        </div>
+        <div className="install-footer"><span>NEED MORE DETAIL?</span><a href="https://github.com/Radiiduration/Refine-me/blob/main/README.md" target="_blank" rel="noreferrer">Read the full setup guide <ArrowRight size={14} /></a></div>
+      </div>
+    </section>
+  );
+}
 
 export default function App() {
   const [state, setState] = useState<AppState>('INPUT');
@@ -31,10 +145,12 @@ export default function App() {
   const [currentTone, setCurrentTone] = useState('friendly');
   const [modelOnline, setModelOnline] = useState<boolean | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [apiUrl, setApiUrl] = useState(() => localStorage.getItem('refine.apiUrl') || DEFAULT_API_URL);
-  const [apiUrlDraft, setApiUrlDraft] = useState(() => localStorage.getItem('refine.apiUrl') || DEFAULT_API_URL);
+  const [activeView, setActiveView] = useState<'studio' | 'install'>('studio');
+  const [apiUrl, setApiUrl] = useState(initialApiUrl);
+  const [apiUrlDraft, setApiUrlDraft] = useState(initialApiUrl);
   const [apiToken, setApiToken] = useState('');
   const [apiTokenDraft, setApiTokenDraft] = useState('');
+  const [connectionError, setConnectionError] = useState('');
   const authHeaders: Record<string, string> = apiToken ? { 'X-Refine-Token': apiToken } : {};
 
   const toneEntries = useMemo(() => Object.entries(tones), [tones]);
@@ -150,7 +266,8 @@ export default function App() {
         </a>
         <button className="new-draft" onClick={reset}><FileEdit size={17} /> New draft</button>
         <div className="sidebar-label">YOUR SPACE</div>
-        <button className="side-link active"><span className="side-link-icon"><Wand2 size={17} /></span> Writing studio</button>
+        <button className={`side-link ${activeView === 'studio' ? 'active' : ''}`} onClick={() => setActiveView('studio')}><span className="side-link-icon"><Wand2 size={17} /></span> Writing studio</button>
+        <button className={`side-link ${activeView === 'install' ? 'active' : ''}`} onClick={() => setActiveView('install')}><span className="side-link-icon"><Terminal size={17} /></span> Install & setup</button>
         <div className="sidebar-spacer" />
         <div className="sidebar-note">
           <span className="note-icon"><Lock size={16} /></span>
@@ -164,14 +281,15 @@ export default function App() {
       <main className="main-area" id="top">
         <header className="topbar">
           <div className="mobile-brand"><span className="brand-mark"><Sparkles size={16} /></span><b>refine<span className="brand-period">.</span></b></div>
-          <div className="breadcrumb"><span>Workspace</span><span className="crumb-slash">/</span><strong>Writing studio</strong></div>
+          <div className="breadcrumb"><span>REFINE</span><span className="crumb-slash">/</span><strong>{activeView === 'install' ? 'Install & setup' : 'Writing studio'}</strong></div>
           <div className="topbar-actions">
+            <button className="setup-chip" onClick={() => setActiveView(activeView === 'install' ? 'studio' : 'install')}>{activeView === 'install' ? <Wand2 size={14} /> : <Terminal size={14} />}{activeView === 'install' ? 'Writing studio' : 'Install & setup'}</button>
             <button className="privacy-chip" onClick={() => setShowPrivacy(true)}><ShieldCheck size={15} /> Private by design</button>
             <button className="help-button" aria-label="Privacy details" onClick={() => setShowPrivacy(true)}><HelpCircle size={18} /></button>
           </div>
         </header>
 
-        <div className="page-content">
+        {activeView === 'install' ? <InstallGuide onConfigure={() => setShowPrivacy(true)} onOpenStudio={() => setActiveView('studio')} /> : <div className="page-content">
           <section className="welcome-row">
             <div>
               <div className="eyebrow"><span className="eyebrow-dot" /> YOUR PRIVATE WRITING SPACE</div>
@@ -237,10 +355,10 @@ export default function App() {
           </section>
 
           <footer className="page-footer"><span>REFINE <i>·</i> LOCAL BY DESIGN</span><button onClick={() => setShowPrivacy(true)}>Your privacy <ChevronDown size={12} /></button></footer>
-        </div>
+        </div>}
       </main>
 
-      {showPrivacy && <div className="modal-backdrop" onClick={() => setShowPrivacy(false)}><section className="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-title" onClick={event => event.stopPropagation()}><button className="modal-close" onClick={() => setShowPrivacy(false)} aria-label="Close"><X size={18} /></button><span className="modal-icon"><ShieldCheck size={22} /></span><div className="panel-kicker">REFINE · PRIVATE BY DESIGN</div><h2 id="privacy-title">Your words stay with you.</h2><p>Refine sends your draft to the API address below. When you use the default address, requests stay on this computer and use your local model.</p><label className="api-setting-label" htmlFor="refine-api-url">Local Refine API</label><input id="refine-api-url" className="api-setting-input" value={apiUrlDraft} onChange={event => setApiUrlDraft(event.target.value)} placeholder="http://localhost:8000" /><small className="api-setting-help">Use HTTPS for a remote API. The hosted editor does not host a model.</small><label className="api-setting-label" htmlFor="refine-api-token">Device token (needed for remote API)</label><input id="refine-api-token" type="password" autoComplete="off" className="api-setting-input" value={apiTokenDraft} onChange={event => setApiTokenDraft(event.target.value)} placeholder="Held in memory until this page closes" /><div className="privacy-points"><div><CheckCircle2 size={17} /><span><b>No account needed</b><small>Nothing to sign up for or sync.</small></span></div><div><CheckCircle2 size={17} /><span><b>Your model, your machine</b><small>Drafts go to your configured model.</small></span></div><div><CheckCircle2 size={17} /><span><b>You stay in control</b><small>Your original text stays untouched until you choose a rewrite.</small></span></div></div><button className="modal-done" onClick={() => { const value = apiUrlDraft.trim().replace(/\/$/, ''); localStorage.setItem('refine.apiUrl', value); setApiToken(apiTokenDraft); setApiUrl(value); void checkModel(); setShowPrivacy(false); }}>Save connection</button></section></div>}
+      {showPrivacy && <div className="modal-backdrop" onClick={() => setShowPrivacy(false)}><section className="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-title" onClick={event => event.stopPropagation()}><button className="modal-close" onClick={() => setShowPrivacy(false)} aria-label="Close"><X size={18} /></button><span className="modal-icon"><ShieldCheck size={22} /></span><div className="panel-kicker">REFINE · PRIVATE BY DESIGN</div><h2 id="privacy-title">Your words stay with you.</h2><p>Refine sends your draft to the API address below. When you use the default address, requests stay on this computer and use your local model.</p><label className="api-setting-label" htmlFor="refine-api-url">Local Refine API</label><input id="refine-api-url" className="api-setting-input" value={apiUrlDraft} onChange={event => { setApiUrlDraft(event.target.value); setConnectionError(''); }} placeholder="http://localhost:8000" /><small className={`api-setting-help${connectionError ? ' connection-error' : ''}`}>{connectionError || 'Use loopback for local APIs or HTTPS for a remote API. Remote access needs a 32-character device token.'}</small><label className="api-setting-label" htmlFor="refine-api-token">Device token (needed for remote API)</label><input id="refine-api-token" type="password" autoComplete="off" className="api-setting-input" value={apiTokenDraft} onChange={event => setApiTokenDraft(event.target.value)} placeholder="Held in memory until this page closes" /><div className="privacy-points"><div><CheckCircle2 size={17} /><span><b>No account needed</b><small>Nothing to sign up for or sync.</small></span></div><div><CheckCircle2 size={17} /><span><b>Your model, your machine</b><small>Drafts go to your configured model.</small></span></div><div><CheckCircle2 size={17} /><span><b>You stay in control</b><small>Your original text stays untouched until you choose a rewrite.</small></span></div></div><button className="modal-done" onClick={() => { try { const value = normalizeApiUrl(apiUrlDraft); const parsed = new URL(value); if (!LOOPBACK_HOSTS.has(parsed.hostname) && apiTokenDraft.trim().length < 32) throw new Error('Remote API access needs a device token of at least 32 characters.'); localStorage.setItem('refine.apiUrl', value); setApiToken(apiTokenDraft.trim()); setApiUrl(value); void checkModel(); setShowPrivacy(false); setConnectionError(''); } catch (reason) { setConnectionError(reason instanceof Error ? reason.message : 'Check the API address and try again.'); } }}>Save connection</button></section></div>}
     </div>
   );
 }

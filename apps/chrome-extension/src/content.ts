@@ -201,7 +201,7 @@ class RefineOverlay {
     const response = await this.send({ type: "GET_TONES" });
     if (!response?.success) return this.card("Could not load tones", `<p class="error">${this.escape(response?.error || "Refine API request failed")}</p>`);
     const tones = response.data as Record<string, Tone>;
-    const options = Object.entries(tones).map(([key, tone]) => `<button class="chip" data-action="tone" data-tone="${key}">${this.escape(tone.name)}</button><p class="muted">${this.escape(tone.description)}</p>`).join("");
+    const options = Object.entries(tones).map(([key, tone]) => `<button class="chip" data-action="tone" data-tone="${this.escape(key)}">${this.escape(tone.name)}</button><p class="muted">${this.escape(tone.description)}</p>`).join("");
     this.card("Choose a tone", options);
   }
 
