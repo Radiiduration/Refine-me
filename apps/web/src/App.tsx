@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowRight, Check, CheckCircle2, ChevronDown, Clipboard, Command, Copy, FileEdit,
+  ArrowRight, Check, CheckCircle2, ChevronDown, Clipboard, Command, Copy, FileEdit, Github,
   Globe2, HelpCircle, Laptop, Loader2, Lock, RotateCcw, ShieldCheck, Smartphone,
   Sparkles, Terminal, Wand2, X,
 } from 'lucide-react';
@@ -285,6 +285,7 @@ export default function App() {
           <div className="breadcrumb"><span>REFINE</span><span className="crumb-slash">/</span><strong>{activeView === 'install' ? 'Install & setup' : 'Writing studio'}</strong></div>
           <div className="topbar-actions">
             <button className="setup-chip" onClick={() => setActiveView(activeView === 'install' ? 'studio' : 'install')}>{activeView === 'install' ? <Wand2 size={14} /> : <Terminal size={14} />}{activeView === 'install' ? 'Writing studio' : 'Install & setup'}</button>
+            <a className="github-link" href="https://github.com/Radiiduration/Refine-me" target="_blank" rel="noopener noreferrer" aria-label="Open Refine on GitHub"><Github size={15} /><span>GitHub</span></a>
             <button className="privacy-chip" onClick={() => setShowPrivacy(true)}><ShieldCheck size={15} /> Private by design</button>
             <button className="help-button" aria-label="Privacy details" onClick={() => setShowPrivacy(true)}><HelpCircle size={18} /></button>
           </div>
